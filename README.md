@@ -21,7 +21,7 @@ Requirements
 Installation
 ------------
 Get latest version from github
-``git clone https://github.com/longdeer/pygwarts``
+<br>``https://github.com/longdeer/pygwarts.git``
 
 Then run ``tests/unit_main.py --clean-up`` to ensure capabilities.
 

@@ -136,9 +136,9 @@ class Transmutable:
 	"""
 
 
-	_UPPER_LAYER		:Optional[Transmutable]
+	_UPPER_LAYER				:Optional[Transmutable]
 	_MUTABLE_CHAIN_HOOK	= True
-	_UPPER_LAYER_HOOK	= True
+	_UPPER_LAYER_HOOK		= True
 
 
 	def __str__(self):
