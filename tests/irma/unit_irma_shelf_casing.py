@@ -9,6 +9,8 @@ from	pygwarts.irma.shelve.casing			import shelf_case
 from	pygwarts.irma.shelve.casing			import is_num
 from	pygwarts.irma.shelve.casing			import num_diff
 from	pygwarts.irma.shelve.casing			import seq_diff
+from	pygwarts.irma.shelve.casing			import mostsec_diff
+from	pygwarts.irma.shelve.casing			import byte_size_diff
 from	pygwarts.irma.shelve.casing			import ShelfCase
 from	pygwarts.irma.shelve.casing			import NumDiffCase
 from	pygwarts.irma.shelve.casing			import SeqDiffCase
@@ -26,11 +28,17 @@ class ShelfCasingCase(IrmaTestCase):
 		Testing for fields and edge cases
 	"""
 
+
+	MOSTSEC_PATTERN		= r"\d+ [humnsd]+( \d+ [humnsd]+)* \([\+\-]\d+ [humnsd]+( \d+ [humnsd]+)*\)"
+	BYTESIZE_PATTERN	= r"\d+[BKMGT]( \d+[BKMGT])* \([\+\-]\d+[BKMGT]( \d+[BKMGT])*\)"
+
+
 	@classmethod
 	def tearDownClass(cls):
 
 		if	cls.clean_up:
 			if	os.path.isfile(cls.CASING_HANDLER): os.remove(cls.CASING_HANDLER)
+
 
 	@classmethod
 	def setUpClass(cls):
@@ -358,6 +366,284 @@ class ShelfCasingCase(IrmaTestCase):
 			self.assertRaises(TypeError, seq_diff, invalid, valid_seq)
 			self.assertRaises(TypeError, seq_diff, valid_seq, invalid)
 			self.assertRaises(TypeError, seq_diff, invalid, invalid)
+
+
+
+
+
+
+
+
+	def test_valid_mostsec_diff_int(self):
+
+		for i in range(100):
+			for j in range(100):
+
+				fi = float(i)
+				fj = float(j)
+				si1	= str(i)
+				sj1	= str(j)
+				si2	= str(fi)
+				sj2	= str(fj)
+
+				self.assertRegex(mostsec_diff(i,j), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,i), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fj), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fi), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj2), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si2), self.MOSTSEC_PATTERN)
+
+				self.assertRegex(mostsec_diff(j,i), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,j), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fi), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fj), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si2), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj2), self.MOSTSEC_PATTERN)
+
+
+	def test_valid_mostsec_diff_big_int(self):
+
+		for i in range(int(1E9), int(100E9), int(1E9)):
+			for j in range(100):
+
+				fi = float(i)
+				fj = float(j)
+				si1	= str(i)
+				sj1	= str(j)
+				si2	= str(fi)
+				sj2	= str(fj)
+
+				self.assertRegex(mostsec_diff(i,j), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,i), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fj), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fi), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj2), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si2), self.MOSTSEC_PATTERN)
+
+				self.assertRegex(mostsec_diff(j,i), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,j), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fi), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fj), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si2), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj2), self.MOSTSEC_PATTERN)
+
+
+	def test_valid_mostsec_diff_float(self):
+
+		for i in range(100):
+			for j in range(100):
+
+				fi1	= f"{i}.{j}"
+				fj1 = f"{j}.{i}"
+				si1	= float(fi1)
+				sj1 = float(fj1)
+
+				self.assertRegex(mostsec_diff(i,fj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fi1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si1), self.MOSTSEC_PATTERN)
+
+				self.assertRegex(mostsec_diff(j,fi1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj1), self.MOSTSEC_PATTERN)
+
+
+	def test_valid_mostsec_diff_big_float(self):
+
+		for i in range(int(1E9), int(100E9), int(1E9)):
+			for j in range(100):
+
+				fi1	= f"{i}.{j}"
+				fj1 = f"{j}.{i}"
+				si1	= float(fi1)
+				sj1 = float(fj1)
+
+				self.assertRegex(mostsec_diff(i,fj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,fi1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,sj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(i,si1), self.MOSTSEC_PATTERN)
+
+				self.assertRegex(mostsec_diff(j,fi1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,fj1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,si1), self.MOSTSEC_PATTERN)
+				self.assertRegex(mostsec_diff(j,sj1), self.MOSTSEC_PATTERN)
+
+
+	def test_invalid_mostsec_diff(self):
+
+		for invalid1 in (
+
+			"integer", ..., print, unittest, Transmutable,
+			[ 42 ],( 42, ),{ "value": 42 }
+		):
+			for invalid2 in (
+
+				"integer", ..., print, unittest, Transmutable,
+				[ 42 ],( 42, ),{ "value": 42 }
+			):
+				with self.subTest(invalid1=invalid1, invalid2=invalid2):
+					self.assertRaises(
+
+						(NameError, TypeError, SyntaxError),
+						mostsec_diff,
+						invalid1,
+						invalid2
+					)
+					self.assertRaises(
+
+						(NameError, TypeError, SyntaxError),
+						mostsec_diff,
+						invalid2,
+						invalid1
+					)
+
+
+
+
+
+
+
+
+	def test_valid_byte_size_diff_int(self):
+
+		for i in range(100):
+			for j in range(100):
+
+				fi = float(i)
+				fj = float(j)
+				si1	= str(i)
+				sj1	= str(j)
+				si2	= str(fi)
+				sj2	= str(fj)
+
+				self.assertRegex(byte_size_diff(i,j), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,i), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fj), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fi), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj2), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si2), self.BYTESIZE_PATTERN)
+
+				self.assertRegex(byte_size_diff(j,i), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,j), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fi), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fj), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si2), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj2), self.BYTESIZE_PATTERN)
+
+
+	def test_valid_byte_size_diff_big_int(self):
+
+		for i in range(int(1E9), int(100E9), int(1E9)):
+			for j in range(100):
+
+				fi = float(i)
+				fj = float(j)
+				si1	= str(i)
+				sj1	= str(j)
+				si2	= str(fi)
+				sj2	= str(fj)
+
+				self.assertRegex(byte_size_diff(i,j), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,i), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fj), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fi), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj2), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si2), self.BYTESIZE_PATTERN)
+
+				self.assertRegex(byte_size_diff(j,i), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,j), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fi), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fj), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si2), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj2), self.BYTESIZE_PATTERN)
+
+
+	def test_valid_byte_size_diff_float(self):
+
+		for i in range(100):
+			for j in range(100):
+
+				fi1	= f"{i}.{j}"
+				fj1 = f"{j}.{i}"
+				si1	= float(fi1)
+				sj1 = float(fj1)
+
+				self.assertRegex(byte_size_diff(i,fj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fi1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si1), self.BYTESIZE_PATTERN)
+
+				self.assertRegex(byte_size_diff(j,fi1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj1), self.BYTESIZE_PATTERN)
+
+
+	def test_valid_byte_size_diff_big_float(self):
+
+		for i in range(int(1E9), int(100E9), int(1E9)):
+			for j in range(100):
+
+				fi1	= f"{i}.{j}"
+				fj1 = f"{j}.{i}"
+				si1	= float(fi1)
+				sj1 = float(fj1)
+
+				self.assertRegex(byte_size_diff(i,fj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,fi1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,sj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(i,si1), self.BYTESIZE_PATTERN)
+
+				self.assertRegex(byte_size_diff(j,fi1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,fj1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,si1), self.BYTESIZE_PATTERN)
+				self.assertRegex(byte_size_diff(j,sj1), self.BYTESIZE_PATTERN)
+
+
+	def test_invalid_byte_size_diff(self):
+
+		for invalid1 in (
+
+			"integer", ..., print, unittest, Transmutable,
+			[ 42 ],( 42, ),{ "value": 42 }
+		):
+			for invalid2 in (
+
+				"integer", ..., print, unittest, Transmutable,
+				[ 42 ],( 42, ),{ "value": 42 }
+			):
+				with self.subTest(invalid1=invalid1, invalid2=invalid2):
+					self.assertRaises(
+
+						(NameError, TypeError, SyntaxError),
+						byte_size_diff,
+						invalid1,
+						invalid2
+					)
+					self.assertRaises(
+
+						(NameError, TypeError, SyntaxError),
+						byte_size_diff,
+						invalid2,
+						invalid1
+					)
 
 
 
@@ -984,7 +1270,7 @@ class ShelfCasingCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

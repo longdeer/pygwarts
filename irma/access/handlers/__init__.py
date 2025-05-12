@@ -45,20 +45,22 @@ class AccessHandler(Transmutable):
 	def registered(self, volume :LibraryVolume) -> Literal[True] | None :
 
 		"""
-			Helper method that ensures LibraryVolume object "volume" either already has dictionary mapping
-			for current AccessHandler object or it might be created, so returns True in both cases.
-			Returns None if mapping already exist but is not a dictionary.
+			Helper method that ensures "volume" is a LibraryVolume object which either already has
+			dictionary mapping for current AccessHandler object or it might be created, so True will
+			be returned in those two only cases. Returns None if "volume" is different type or if it
+			is LibraryVolume object with other than dictionary mapping for current AccessHandler.
 		"""
 
-		match volume[self]:
+		if	isinstance(volume, LibraryVolume):
+			match volume[self]:
 
-			case dict()	: pass
-			case None	: volume[self] = dict()
-			case _:
+				case dict()	: pass
+				case None	: volume[self] = dict()
+				case _:
 
-				self.loggy.debug(f"Invalid mapping in {volume} volume")
-				return
-		return	True
+					self.loggy.debug(f"Invalid mapping in {volume} volume")
+					return
+			return	True
 
 
 

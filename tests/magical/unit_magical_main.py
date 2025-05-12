@@ -16,7 +16,7 @@ from	pygwarts.tests.magical.unit_magical_controlled_transmutations	import *
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

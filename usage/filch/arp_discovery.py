@@ -1,10 +1,10 @@
-from operator							import getitem
-from ipaddress							import ip_network
-from pygwarts.irma.contrib				import LibraryContrib
-from pygwarts.filch.linkindor.discovery	import HostDiscovery
-from scapy.all							import srp
-from scapy.all							import Ether
-from scapy.all							import ARP
+from operator						import getitem
+from ipaddress						import ip_network
+from pygwarts.irma.contrib			import LibraryContrib
+from pygwarts.filch.linkindor.arp	import ARPDiscovery
+from scapy.all						import srp
+from scapy.all						import Ether
+from scapy.all						import ARP
 
 
 
@@ -13,7 +13,7 @@ from scapy.all							import ARP
 
 
 
-class Filch(HostDiscovery):
+class Filch(ARPDiscovery):
 	class loggy(LibraryContrib):
 
 		handler		= "file handler path (optional)"

@@ -25,7 +25,7 @@ def byte_size_string(value :int | float | str) -> str | None :
 
 	try:
 
-		byte_size = str(int(float(value)))
+		byte_size = str(int(float(str(value))))
 		sign = "-" if byte_size[0] == "-" else ""
 		byte_size = byte_size.lstrip("-")
 

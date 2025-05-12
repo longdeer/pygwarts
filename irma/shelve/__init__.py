@@ -242,9 +242,9 @@ class LibraryShelf(Transmutable):
 	# Property that calculates and returns current difference between "real_shelf" and "magical_shelf"
 	# lengths. As calculation suggest subtraction of "magical_shelf" length from "real_shelf", the
 	# results must be interpreted as wollows:
-	# 0		- shelves have same lengths;
-	# N		- "real_shelf" bigger than "magical_shelf" by N items;
-	# -N	- "magical_shelf" bigger than "real_shelf" by N items;
+	# 0  - shelves have same lengths;
+	# N  - "real_shelf" bigger than "magical_shelf" by N items;
+	# -N - "magical_shelf" bigger than "real_shelf" by N items;
 	# Also properties that returns the set of keys which are differs for real to magical or vice versa.
 	@property
 	def diff(self) -> int : return len(self.real_shelf) - len(self.magical_shelf)

@@ -16,9 +16,9 @@ class ContribInterceptor:
 
 	"""
 		LibraryContrib decorators super class. Implements the mutable chain injection for a LibraryContrib
-		children with "CONTRIB_HOOK" field and it's corresponding processing in decoration time. As decorated
-		layer in __init__ must be either LibraryContrib or it's another decorator, "CONTRIB_HOOK" will allow
-		it's recognition and further handling.
+		type or object, with "CONTRIB_HOOK" field and it's corresponding processing in decoration time.
+		As decorated layer in __init__ must be either LibraryContrib or it's another decorator,
+		"CONTRIB_HOOK" will help recognize proper entities.
 	"""
 
 	CONTRIB_HOOK = True
@@ -27,8 +27,9 @@ class ContribInterceptor:
 
 		match layer:
 
-			case	type() if getattr(layer, "CONTRIB_HOOK", None):		self.layer = layer
-			case	object() if getattr(layer, "CONTRIB_HOOK", None):	self.layer = layer()
+			case	LibraryContrib(): self.layer = layer
+			case	type() if getattr(layer, "CONTRIB_HOOK", None): self.layer = layer
+			case	object() if getattr(layer, "CONTRIB_HOOK", None): self.layer = layer()
 			case _:	raise TypeError(f"Intercepting invalid object \"{layer}\"")
 
 
@@ -41,13 +42,14 @@ class ContribInterceptor:
 class STDOUTL(ContribInterceptor):
 
 	"""
-		LibraryContrib decorator, that overwrites such LibraryContrib level methods like:
+		LibraryContrib decorator, that overwrites following LibraryContrib level methods:
 			"info",
 			"warning",
 			"error",
 			"critical",
 		to intercept messages and put it to the standard output (print it) before return
-		to the LibraryContrib corresponding level method.
+		to the LibraryContrib corresponding level method. If "handover_name" is available, it will
+		be precede the message in standard output.
 	"""
 
 	def __call__(self):
@@ -55,22 +57,50 @@ class STDOUTL(ContribInterceptor):
 
 			def info(self, message :str):
 
-				print(f"{self.handover_name} INFO : {message}")
+				print(
+
+					"%sINFO : %s"%(
+
+						f"{self.handover_name} " if self.handover_name is not None else "",
+						message
+					)
+				)
 				return super().info(message)
 
 			def warning(self, message :str):
 
-				print(f"{self.handover_name} WARNING : {message}")
+				print(
+
+					"%sWARNING : %s"%(
+
+						f"{self.handover_name} " if self.handover_name is not None else "",
+						message
+					)
+				)
 				return super().warning(message)
 
 			def error(self, message :str):
 
-				print(f"{self.handover_name} ERROR : {message}")
+				print(
+
+					"%sERROR : %s"%(
+
+						f"{self.handover_name} " if self.handover_name is not None else "",
+						message
+					)
+				)
 				return super().error(message)
 
 			def critical(self, message :str):
 
-				print(f"{self.handover_name} CRITICAL : {message}")
+				print(
+
+					"%sCRITICAL : %s"%(
+
+						f"{self.handover_name} " if self.handover_name is not None else "",
+						message
+					)
+				)
 				return super().critical(message)
 
 

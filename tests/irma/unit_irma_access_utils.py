@@ -61,9 +61,6 @@ class AccessUtilsCase(IrmaTestCase):
 		self.assertEqual(byte_size_string(99999999999999), "99T 999G 999M 999K 999B")
 		self.assertEqual(byte_size_string(999999999999999), "999T 999G 999M 999K 999B")
 
-		self.assertEqual(byte_size_string(False), "0B")
-		self.assertEqual(byte_size_string(True), "1B")
-
 		self.assertEqual(byte_size_string(0.9), "0B")
 		self.assertEqual(byte_size_string(1.9), "1B")
 		self.assertEqual(byte_size_string(9.9), "9B")
@@ -455,8 +452,8 @@ class AccessUtilsCase(IrmaTestCase):
 
 		for value in (
 
-			"forty two",[ 42 ],( 42, ),{ 42 },{ "value": 42 },
-			None, ..., print, unittest, self, type, object, super(), Exception
+			"forty two",[ 42 ],( 42, ),{ 42 },{ "value": 42 }, True, False, None, ...,
+			print, unittest, self, type, object, super(), Exception
 		):
 			self.assertIsNone(byte_size_string(value))
 
@@ -654,7 +651,7 @@ class AccessUtilsCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

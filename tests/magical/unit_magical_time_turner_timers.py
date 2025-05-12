@@ -984,13 +984,12 @@ class TimeTurnerTimersCases(MagicalTestCase):
 
 	def test_mostsec_invalids(self):
 
-		self.assertIsNone(mostsec("integer"))
-		self.assertIsNone(mostsec(None))
-		self.assertIsNone(mostsec([ 42 ]))
-		self.assertIsNone(mostsec({ 42 }))
-		self.assertIsNone(mostsec({ "value": 42 }))
-		self.assertIsNone(mostsec(( 42, )))
-		self.assertIsNone(mostsec(Transmutable))
+		for invalid in (
+
+			"integer", True, False, ..., None, print, unittest, Transmutable,
+			[ 42 ],( 42, ),{ 42 },{ "value": 42 }
+		):
+			self.assertIsNone(mostsec(invalid))
 
 
 
@@ -1971,7 +1970,7 @@ class TimeTurnerTimersCases(MagicalTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

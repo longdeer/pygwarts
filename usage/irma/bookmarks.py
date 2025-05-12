@@ -17,11 +17,11 @@ from pygwarts.irma.access.inducers.case		import InducerCase
 from pygwarts.irma.access.utils				import TextWrapper
 from pygwarts.irma.shelve.casing			import is_num
 from pygwarts.irma.shelve.casing			import num_diff
+from pygwarts.irma.shelve.casing			import mostsec_diff
+from pygwarts.irma.shelve.casing			import byte_size_diff
 from pygwarts.filch.nettherin				import VALID_IP4
 from pygwarts.filch.linkindor				import VALID_MAC
 from pygwarts.filch.marauders_map			import MaraudersMap
-from casing									import mostsec_diff
-from casing									import byte_size_diff
 from handlers								import DiscoverywatchAccessHandler
 from handlers								import BroadwatchAccessHandler
 from inducers								import DiffCaseRegisterRecapAccumulatorInducer
@@ -67,10 +67,8 @@ class CallstampActivity(VolumeBookmark):
 			def __call__(self, volume :LibraryVolume) -> str | None :
 
 				if	isinstance(recap := self.get_register_recap(volume), int | float):
-					if	(counter := self.get_register_counter(volume)):
-						if	1 <counter:
-
-							return str(recap /counter)
+					if	isinstance(counter := self.get_register_counter(volume), int):
+						if	1 <counter : return str(recap /counter)
 
 
 
@@ -155,18 +153,18 @@ class DiscoveryWatch(VolumeBookmark):
 
 	""" filch hosts discovery typical bookmark, that encompasses handling and full induce """
 
-	trigger		= "Received response for"							# HostDiscovery loggy line that will trigger bookmark
+	trigger		= "Received response for"							# ARPDiscovery loggy line that will trigger bookmark
 	rpattern	= rf"(?P<ip>{VALID_IP4}) at (?P<mac>{VALID_MAC})"	# Pattern to extract response ip4 and mac
 
 	class DiscoveredHosts(DiscoverywatchAccessHandler):
 
 		@TextWrapper("\nhosts mapped: ")
 		@InducerCase("library_shelf", prep=is_num, post=num_diff)
-		class MappedHosts(AccessInducer):
+		class MappedHostsInducer(AccessInducer):
 
 			def __call__(self, volume :LibraryVolume) -> str | None :
 
-				if	isinstance(getattr(self, "filchmap", MaraudersMap)):
+				if	isinstance(getattr(self, "filchmap"), MaraudersMap):
 					if	(hosts := len(self.filchmap.ip4)):
 
 						return str(hosts)
@@ -181,14 +179,10 @@ class DiscoveryWatch(VolumeBookmark):
 
 					return (
 
-						len(recap.get("mismatched_mac",[]))
-						+
-						len(recap.get("mismatched_ip",[]))
-						+
-						len(recap.get("unknown_mac",[]))
-						+
-						len(recap.get("unknown_ip",[]))
-						+
+						len(recap.get("mismatched_mac",[]))	+
+						len(recap.get("mismatched_ip",[]))	+
+						len(recap.get("unknown_mac",[]))	+
+						len(recap.get("unknown_ip",[]))		+
 						len(recap.get("known_hosts",[]))
 					)
 
@@ -204,21 +198,20 @@ class DiscoveryWatch(VolumeBookmark):
 					if	(miss_mac := recap.get("mismatched_mac")):	misses.extend(miss_mac)
 					if	(miss_ip := recap.get("mismatched_ip")):	misses.extend(miss_ip)
 					if	(amount := len(misses)):
+
 						missed = [
 
-							"%s response from %s mac"%(
+							"%s responded from %s"%(
 
-								record.get("filch_mapped_host_name"),
-								record.get("filch_maced_host_name")
+								record.get("source MAC to name"),
+								f"{record.get('source ip4 to name')} ip4"
 
-							)	if record.get("filch_mapped_mac") is not None else
+								if record.get("source ip4 to MAC") is not None else
 
-							"%s mac response from unknown %s"%(
+								f"unknown {record.get('source ip4')}"
+							)
 
-								record.get("filch_maced_host_name"),
-								record.get("discovered_ip")
-
-							)	for record in misses
+							for record in misses
 						]
 						return	"%s\n\t%s"%(
 
@@ -238,14 +231,17 @@ class DiscoveryWatch(VolumeBookmark):
 					if	(no_mac := recap.get("unknown_mac")):	unknowns.extend(no_mac)
 					if	(no_ip := recap.get("unknown_ip")):		unknowns.extend(no_ip)
 					if	(amount := len(unknowns)):
+
 						unknown = [
 
-							"%s response from unknown %s"%(
+							"%s responded from %s"%(
 
-								record.get("filch_mapped_host_name")
-								if record.get("filch_mapped_mac") is not None else
-								record.get("discovered_ip"),
-								record.get("discovered_mac")
+								record.get("source MAC"),
+								f"{record.get('source ip4 to name')} ip4"
+
+								if record.get("source ip4 to MAC") is not None else
+
+								f"unknown {record.get('source ip4')}"
 
 							)	for record in unknowns
 						]
@@ -265,16 +261,13 @@ class DiscoveryWatch(VolumeBookmark):
 					if	(hosts := recap.get("known_hosts")) is not None:
 
 						if	(amount := len(hosts)):
+
 							up = [
 
-								"%s (%s)"%(
-
-									record.get("filch_mapped_host_name"),
-									record.get("filch_mapped_description")
-
-								)	for record in hosts
+								f"{record.get('source ip4 to name')} ({record.get('description')})"
+								for record in hosts
 							]
-							return	"%s\n\t%s"%(
+							return "%s\n\t%s"%(
 
 								self.filch_caseamount(amount, volume),
 								"\n\t".join(self.filch_caserecords(up, volume))
@@ -289,16 +282,17 @@ class DiscoveryWatch(VolumeBookmark):
 				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
 					if	(hosts := recap.get("known_hosts")) is not None:
 
-						up = { record.get("discovered_ip") for record in hosts }
-						down = [ ip4 for ip4 in self.filchmap["IP4"] if ip4 not in up ]
+						up = { record.get("source ip4") for record in hosts }
+						down = [ ip4 for ip4 in self.filchmap.ip4 if ip4 not in up ]
 
 						if	(amount := len(down)):
+
 							downs = [
 
 								"%s (%s)"%(
 
-									self.filchmap["IP4"][record].get("NAME"),
-									self.filchmap["IP4"][record].get("DESC")
+									self.filchmap.ip4[record].get("NAME"),
+									self.filchmap.ip4[record].get("DESC")
 
 								)	for record in down
 							]
@@ -327,7 +321,8 @@ class BroadWatch(VolumeBookmark):
 
 		@TextWrapper("\nrequests trapped: ")
 		@InducerCase("library_shelf", prep=is_num, post=num_diff)
-		class TotalTrappedInducer(RegisterCounterInducer):		pass
+		class TotalTrappedInducer(RegisterCounterInducer):	pass
+
 
 		@TextWrapper("\ngraphs plotted: ")
 		class Plotter(FilchWatchInducer):
@@ -338,62 +333,45 @@ class BroadWatch(VolumeBookmark):
 					totals = defaultdict(int)
 					requests = defaultdict(lambda : defaultdict(int))
 
-					for record in recap.get("mapped_requests",list()):
+					for record in recap.get("mapped",list()):
+						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
+
+							point = int(hundscale(stamp.HM_asjoin))
+							requests[record.get("source ip4 to name")][point] += 1
+							totals[point] += 1
+
+
+					for record in recap.get("ip4_lookup",list()):
+						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
+
+							point = int(hundscale(stamp.HM_asjoin))
+							requests[record.get("source ip4")][point] += 1
+							totals[point] += 1
+
+
+					for record in recap.get("mismatches",list()):
+						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
+
+							point = int(hundscale(stamp.HM_asjoin))
+							requests[record.get("source ip4")][point] += 1
+							totals[point] += 1
+
+
+					for record in recap.get("unknown",list()):
 						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
 
 							point = int(hundscale(stamp.HM_asjoin))
 							totals[point] += 1
-							requests[
 
-								record.get("source_mapped_name",record.get("request_source_ip"))
-							][	point
-							]	+= 1
+							match record.get("state"):
 
-					for record in recap.get("unmapped_requests",list()):
-						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
+								case 3584 | 1924 | 1536:
 
-							point = int(hundscale(stamp.HM_asjoin))
-							totals[point] += 1
-							requests[
+									requests[record.get("source ip4")][point] += 1
 
-								record.get(
-									"source_mapped_name",
-									record.get(
-										"source_maced_name",
-										record.get("request_source_ip")
-									)
-								)
-							][	point
-							]	+= 1
+								case 1145: requests[record.get("source ip4 to name")][point] += 1
+								case rest: self.loggy.warning(f"{self} discovered unknown state {rest}")
 
-					for record in recap.get("mismatched_mac",list()):
-						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
-
-							point = int(hundscale(stamp.HM_asjoin))
-							totals[point] += 1
-							requests[
-
-								record.get("source_mapped_name",record.get("request_source_ip"))
-							][	point
-							]	+= 1
-
-					for record in recap.get("mismatched_ip",list()):
-						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
-
-							point = int(hundscale(stamp.HM_asjoin))
-							totals[point] += 1
-							requests[
-
-								record.get("source_mapped_name",record.get("request_source_ip"))
-							][	point
-							]	+= 1
-
-					for record in recap.get("ip_lookup",list()):
-						if	isinstance(stamp := record.get("timestamp"), TimeTurner):
-
-							point = int(hundscale(stamp.HM_asjoin))
-							totals[point] += 1
-							requests[record.get("request_source_ip")][point] += 1
 
 					if	(amount := len(requests)):
 
@@ -404,6 +382,7 @@ class BroadWatch(VolumeBookmark):
 						fsdir = self.plotdir
 						count = 0
 
+						self.loggy.info(f"Plotting total by {ndate}")
 						self.broad_plot(
 
 							axises=totals.items(),
@@ -414,6 +393,7 @@ class BroadWatch(VolumeBookmark):
 
 						for src, mapping in requests.items():
 
+							self.loggy.info(f"Plotting {src} by {ndate}")
 							count += bool(
 
 								self.broad_plot(
@@ -442,65 +422,7 @@ class BroadWatch(VolumeBookmark):
 
 			def __call__(self, volume :LibraryVolume) -> str | None :
 				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
-
-					events	= list()
-					stamps	= list()
-					records	= list()
-					uniques	= set()
-
-					if	(miss_mac := recap.get("mismatched_mac")) is not None:
-						records.extend(miss_mac)
-					if	(miss_ip := recap.get("mismatched_ip")) is not None:
-						records.extend(miss_ip)
-
-					for record in records:
-
-						stamp = record.get("timestamp").format("%H%M %d/%m/%Y")
-						event = (
-							"request with %s mac mismatching"%(
-								record.get("source_mapped_name"),
-							)
-
-							if record.get("source_mapped_name") is not None else
-
-							"request with %s ip4 mismatching"%(
-								record.get("source_maced_name"),
-							)
-
-							if record.get("target_mapped_name") is not None else
-
-							"unknown %s request with %s ip4 mismatching"%(
-
-								record.get("request_target_ip"),
-								record.get("source_maced_name"),
-							)
-						)
-
-						if	(current := f"{event} at {stamp}") not in uniques:
-
-							uniques.add(current)
-							events.append(event)
-							stamps.append(stamp)
-
-					if	(amount := len(uniques)):
-						return "%s\n\t%s"%(
-
-							self.filch_caseamount(amount, volume),
-							"\n\t".join(
-
-								f"{event} at {stamp}"
-								for event,stamp
-								in zip(self.filch_caseamount(events, volume), stamps)
-							)
-						)
-
-		@TextWrapper("\n\nip4 lookups: ")
-		class LookupRequestsInducer(FilchWatchInducer):
-
-			def __call__(self, volume :LibraryVolume) -> str | None :
-
-				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
-					if	isinstance(records := recap.get("ip_lookup"), list):
+					if	isinstance(records := recap.get("mismatches"), list):
 
 						events	= list()
 						stamps	= list()
@@ -508,69 +430,75 @@ class BroadWatch(VolumeBookmark):
 
 						for record in records:
 
-							stamp = record.get("timestamp").format("%H%M %d/%m/%Y")
-							event = (
+							stamp = record["timestamp"].format("%H%M %d/%m/%Y")
+							match record.get("state"):
 
-								"%s ip4 lookup"%record.get("source_maced_name")
+								case 4093:	event = "%s gratuitous from %s ip4"%(
 
-
-								if	(record.get("source_maced_ip") is not None)
-								and
-									(record.get("source_maced_name") is not None)
-								else
-
-
-								"%s lookup from %s"%(
-
-									record.get("target_mapped_name"),
-									record.get("source_maced_name")
+									record.get("source MAC to name"), record.get("target ip4 to name")
 								)
+								case 3997:	event = "%s gratuitous from %s ip4"%(
 
-
-								if	(record.get("source_maced_name") is not None)
-								and
-									(record.get("target_mapped_name") is not None)
-								else
-
-
-								"unknown %s lookup from %s"%(
-
-									record.get("request_target_ip"),
-									record.get("source_maced_name"),
+									record.get("source MAC"), record.get("target ip4 to name")
 								)
+								case 3680:	event = "%s gratuitous from unknown %s"%(
 
-
-								if	(record.get("source_maced_name") is not None)
-								and
-									(record.get("request_target_ip") is not None)
-								else
-
-
-								"%s ip4 lookup from unknown %s"%(
-
-									record.get("target_mapped_name"),
-									record.get("request_source_mac"),
+									record.get("source MAC to name"), record.get("target ip4")
 								)
+								case 2045:	event = "%s requested from %s ip4"%(
 
-
-								if	(record.get("target_mapped_ip") is not None)
-								and
-									(record.get("target_mapped_name") is not None)
-								else
-
-
-								"unknown %s lookup from unknown %s"%(
-
-									record.get("request_target_ip"),
-									record.get("request_source_mac"),
+									record.get("source MAC to name"), record.get("source ip4 to name")
 								)
-							)
+								case 2020:	event = "%s requested from unknown %s"%(
+
+									record.get("source MAC to name"), record.get("source ip4")
+								)
+								case 1949:	event = "%s requested from %s ip4"%(
+
+									record.get("source MAC"), record.get("source ip4 to name")
+								)
+								case 1657:	event = "%s requested unknown %s from %s ip4"%(
+
+									record.get("source MAC to name"),
+									record.get("target ip4"),
+									record.get("source ip4 to name")
+								)
+								case 1632:	event = "%s requested unknown %s from unknown %s"%(
+
+									record.get("source MAC to name"),
+									record.get("target ip4"),
+									record.get("source ip4")
+								)
+								case 1561:	event = "%s requested unknown %s from %s ip4"%(
+
+									record.get("source MAC"),
+									record.get("target ip4"),
+									record.get("source ip4 to name")
+								)
+								case 1021:	event = "%s requested %s ip4 from %s ip4"%(
+
+									record.get("source MAC to name"),
+									record.get("source MAC to name"),
+									record.get("source ip4 to name")
+								)
+								case 996:	event = "%s requested %s ip4 from unknown %s"%(
+
+									record.get("source MAC to name"),
+									record.get("source MAC to name"),
+									record.get("source ip4")
+								)
+								case rst:
+
+									self.loggy.warning(f"{self} discovered unknown state {rst}")
+									continue
+
 
 							if	(current := f"{event} at {stamp}") not in uniques:
 
 								uniques.add(current)
 								events.append(event)
 								stamps.append(stamp)
+
 
 						if	(amount := len(uniques)):
 							return "%s\n\t%s"%(
@@ -579,8 +507,68 @@ class BroadWatch(VolumeBookmark):
 								"\n\t".join(
 
 									f"{event} at {stamp}"
-									for event,stamp
-									in zip(self.filch_caseamount(events, volume), stamps)
+									for	event,stamp
+									in	zip(self.filch_caserecords(events, volume), stamps)
+								)
+							)
+
+
+		@TextWrapper("\n\nip4 lookups: ")
+		class LookupRequestsInducer(FilchWatchInducer):
+
+			def __call__(self, volume :LibraryVolume) -> str | None :
+
+				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
+					if	isinstance(records := recap.get("ip4_lookup"), list):
+
+						events	= list()
+						stamps	= list()
+						uniques	= set()
+
+						for record in records:
+
+							stamp = record["timestamp"].format("%H%M %d/%m/%Y")
+							match record.get("state"):
+
+								case 998:	event = f"{record.get('source MAC to name')} ip4 lookup"
+								case 1538:	event = "%s ip4 lookup for unknown %s"%(
+
+										record.get("source MAC"), record.get("target ip4")
+									)
+								case 1634:	event = "%s ip4 lookup for unknown %s"%(
+
+										record.get("source MAC to name"), record.get("target ip4")
+									)
+								case 1926:	event = "%s ip4 lookup for %s"%(
+
+										record.get("source MAC"), record.get("target ip4 to name")
+									)
+								case 2022:	event = "%s ip4 lookup for %s"%(
+
+										record.get("source MAC to name"), record.get("target ip4 to name")
+									)
+								case rst:
+
+									self.loggy.warning(f"{self} discovered unknown state {rst}")
+									continue
+
+
+							if	(current := f"{event} at {stamp}") not in uniques:
+
+								uniques.add(current)
+								events.append(event)
+								stamps.append(stamp)
+
+
+						if	(amount := len(uniques)):
+							return "%s\n\t%s"%(
+
+								self.filch_caseamount(amount, volume),
+								"\n\t".join(
+
+									f"{event} at {stamp}"
+									for	event,stamp
+									in	zip(self.filch_caserecords(events, volume), stamps)
 								)
 							)
 
@@ -591,24 +579,27 @@ class BroadWatch(VolumeBookmark):
 			def __call__(self, volume :LibraryVolume) -> str | None :
 
 				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
-					if	isinstance(records := recap.get("unmapped_requests"), list):
+					if	isinstance(records := recap.get("unknown"), list):
 
 						requests = defaultdict(lambda : defaultdict(int))
 
 						for record in records:
-							if	isinstance(record, dict):
+							if	isinstance(record,dict):
+								match record.get("state"):
 
-								requests[
+									case 3584 | 1536:
 
-									record.get("source_mapped_name")
-									or
-									record.get("request_source_ip")
-								][	record.get("target_mapped_name")
-									or
-									record.get("request_target_ip")
-								]	+= 1
+										requests[f"{record.get('source ip4')} ({record.get('source MAC')})"][record.get("target ip4")] += 1
 
-						return	self.broad_gather(
+									case 1924:
+
+										requests[f"{record.get('source ip4')} ({record.get('source MAC')})"][record.get("target ip4 to name")] += 1
+
+									case 1145: requests[record.get("source ip4 to name")][record.get("target ip4")] += 1
+									case rest: self.loggy.warning(f"{self} discovered unknown state {rest}")
+
+
+						return self.broad_gather(
 
 							requests,
 							volume,
@@ -622,18 +613,14 @@ class BroadWatch(VolumeBookmark):
 			def __call__(self, volume :LibraryVolume) -> str | None :
 
 				if	isinstance(recap := volume[self._UPPER_LAYER], dict):
-					if	isinstance(records := recap.get("mapped_requests"), list):
+					if	isinstance(records := recap.get("mapped"), list):
 
 						requests = defaultdict(lambda : defaultdict(int))
 
 						for record in records:
-							if	isinstance(record, dict):
+							if	isinstance(record,dict):
 
-								requests[
-
-									record.get("source_mapped_name")
-								][	record.get("target_mapped_name")
-								]	+= 1
+								requests[record.get("source ip4 to name")][record.get("target ip4 to name")] += 1
 
 						return	self.broad_gather(
 

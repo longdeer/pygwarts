@@ -2004,7 +2004,1138 @@ class ContribInterceptingCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+	def test_non_Transmutable_intercept(self):
+
+		non_transmutable_i = str(self.IRMA_ROOT /"non_transmutable_i.loggy")
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		noni = NonTransmutable()
+
+		@ContribInterceptingCase.InfoAugmentor
+		class ContribOne(LibraryContrib):
+
+			handler		= non_transmutable_i
+			init_name	= "noni1"
+
+		logger1 = ContribOne()()
+		self.make_loggy_file(non_transmutable_i)
+		noni.action(logger1)
+		logger1.close()
+		loggy = []
+
+		with open(non_transmutable_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@noni1 INFO : Action done (augmented)",
+				"@noni1 WARNING : Action done",
+				"@noni1 ERROR : Action done",
+				"@noni1 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.DebugAugmentor
+		class ContribTwo(LibraryContrib):
+
+			handler		= non_transmutable_i
+			init_name	= "noni2"
+			init_level	= 10
+
+		logger2 = ContribTwo()()
+		self.make_loggy_file(non_transmutable_i)
+		noni.action(logger2)
+		logger2.close()
+		loggy = []
+
+		with open(non_transmutable_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@noni2 DEBUG : Action done (augmented)",
+				"@noni2 INFO : Action done",
+				"@noni2 WARNING : Action done",
+				"@noni2 ERROR : Action done",
+				"@noni2 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.WarningAugmentor
+		class ContribThree(LibraryContrib):
+
+			handler		= non_transmutable_i
+			init_name	= "noni3"
+			init_level	= 30
+
+		logger3 = ContribThree()()
+		self.make_loggy_file(non_transmutable_i)
+		noni.action(logger3)
+		logger3.close()
+		loggy = []
+
+		with open(non_transmutable_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@noni3 WARNING : Action done (augmented)",
+				"@noni3 ERROR : Action done",
+				"@noni3 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.ErrorAugmentor
+		class ContribFour(LibraryContrib):
+
+			handler		= non_transmutable_i
+			init_name	= "noni4"
+			init_level	= 40
+
+		logger4 = ContribFour()()
+		self.make_loggy_file(non_transmutable_i)
+		noni.action(logger4)
+		logger4.close()
+		loggy = []
+
+		with open(non_transmutable_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@noni4 ERROR : Action done (augmented)",
+				"@noni4 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.CriticalAugmentor
+		class ContribFive(LibraryContrib):
+
+			handler		= non_transmutable_i
+			init_name	= "noni5"
+			init_level	= 50
+
+		logger5 = ContribFive()()
+		self.make_loggy_file(non_transmutable_i)
+		noni.action(logger5)
+		logger5.close()
+		loggy = []
+
+		with open(non_transmutable_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@noni5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_i): os.remove(non_transmutable_i)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_args_intercept(self):
+
+		non_transmutable_ai = str(self.IRMA_ROOT /"non_transmutable_ai.loggy")
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		nonai = NonTransmutable()
+
+		@ContribInterceptingCase.InfoAugmentor
+		class ContribOne(LibraryContrib):	pass
+		logger1 = ContribOne()(handler=non_transmutable_ai, init_name="nonai1")
+		self.make_loggy_file(non_transmutable_ai)
+		nonai.action(logger1)
+		logger1.close()
+		loggy = []
+
+		with open(non_transmutable_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonai1 INFO : Action done (augmented)",
+				"@nonai1 WARNING : Action done",
+				"@nonai1 ERROR : Action done",
+				"@nonai1 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.DebugAugmentor
+		class ContribTwo(LibraryContrib):	pass
+		logger2 = ContribTwo()(handler=non_transmutable_ai, init_name="nonai2", init_level=10)
+		self.make_loggy_file(non_transmutable_ai)
+		nonai.action(logger2)
+		logger2.close()
+		loggy = []
+
+		with open(non_transmutable_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonai2 DEBUG : Action done (augmented)",
+				"@nonai2 INFO : Action done",
+				"@nonai2 WARNING : Action done",
+				"@nonai2 ERROR : Action done",
+				"@nonai2 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.WarningAugmentor
+		class ContribThree(LibraryContrib):	pass
+		logger3 = ContribThree()(handler=non_transmutable_ai, init_name="nonai3", init_level=30)
+		self.make_loggy_file(non_transmutable_ai)
+		nonai.action(logger3)
+		logger3.close()
+		loggy = []
+
+		with open(non_transmutable_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonai3 WARNING : Action done (augmented)",
+				"@nonai3 ERROR : Action done",
+				"@nonai3 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.ErrorAugmentor
+		class ContribFour(LibraryContrib):	pass
+		logger4 = ContribFour()(handler=non_transmutable_ai, init_name="nonai4", init_level=40)
+		self.make_loggy_file(non_transmutable_ai)
+		nonai.action(logger4)
+		logger4.close()
+		loggy = []
+
+		with open(non_transmutable_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonai4 ERROR : Action done (augmented)",
+				"@nonai4 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.CriticalAugmentor
+		class ContribFive(LibraryContrib):	pass
+		logger5 = ContribFive()(handler=non_transmutable_ai, init_name="nonai5", init_level=50)
+		self.make_loggy_file(non_transmutable_ai)
+		nonai.action(logger5)
+		logger5.close()
+		loggy = []
+
+		with open(non_transmutable_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonai5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_ai): os.remove(non_transmutable_ai)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_field_intercept(self):
+
+		non_transmutable_f_i = str(self.IRMA_ROOT /"non_transmutable_f_i.loggy")
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		@ContribInterceptingCase.InfoAugmentor
+		class ContribOne(LibraryContrib):
+
+			handler		= non_transmutable_f_i
+			init_name	= "nonfi1"
+
+		class One(NonTransmutable):
+			def __init__(self): self.logger = ContribOne()()
+
+		self.make_loggy_file(non_transmutable_f_i)
+		one = One()
+		one.action()
+		one.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfi1 INFO : Action done (augmented)",
+				"@nonfi1 WARNING : Action done",
+				"@nonfi1 ERROR : Action done",
+				"@nonfi1 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.DebugAugmentor
+		class ContribTwo(LibraryContrib):
+
+			handler		= non_transmutable_f_i
+			init_name	= "nonfi2"
+			init_level	= 10
+
+		class Two(NonTransmutable):
+			def __init__(self): self.logger = ContribTwo()()
+
+		self.make_loggy_file(non_transmutable_f_i)
+		two = Two()
+		two.action()
+		two.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfi2 DEBUG : Action done (augmented)",
+				"@nonfi2 INFO : Action done",
+				"@nonfi2 WARNING : Action done",
+				"@nonfi2 ERROR : Action done",
+				"@nonfi2 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.WarningAugmentor
+		class ContribThree(LibraryContrib):
+
+			handler		= non_transmutable_f_i
+			init_name	= "nonfi3"
+			init_level	= 30
+
+		class Three(NonTransmutable):
+			def __init__(self): self.logger = ContribThree()()
+
+		self.make_loggy_file(non_transmutable_f_i)
+		three = Three()
+		three.action()
+		three.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfi3 WARNING : Action done (augmented)",
+				"@nonfi3 ERROR : Action done",
+				"@nonfi3 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.ErrorAugmentor
+		class ContribFour(LibraryContrib):
+
+			handler		= non_transmutable_f_i
+			init_name	= "nonfi4"
+			init_level	= 40
+
+		class Four(NonTransmutable):
+			def __init__(self): self.logger = ContribFour()()
+
+		self.make_loggy_file(non_transmutable_f_i)
+		four = Four()
+		four.action()
+		four.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfi4 ERROR : Action done (augmented)",
+				"@nonfi4 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.CriticalAugmentor
+		class ContribFive(LibraryContrib):
+
+			handler		= non_transmutable_f_i
+			init_name	= "nonfi5"
+			init_level	= 50
+
+		class Five(NonTransmutable):
+			def __init__(self): self.logger = ContribFive()()
+
+		self.make_loggy_file(non_transmutable_f_i)
+		five = Five()
+		five.action()
+		five.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_i) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfi5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_f_i): os.remove(non_transmutable_f_i)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_field_args_intercept(self):
+
+		non_transmutable_f_ai = str(self.IRMA_ROOT /"non_transmutable_f_ai.loggy")
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		@ContribInterceptingCase.InfoAugmentor
+		class ContribOne(LibraryContrib):	pass
+		class One(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribOne()(
+					handler=non_transmutable_f_ai, init_name="nonfai1"
+				)
+
+		self.make_loggy_file(non_transmutable_f_ai)
+		one = One()
+		one.action()
+		one.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfai1 INFO : Action done (augmented)",
+				"@nonfai1 WARNING : Action done",
+				"@nonfai1 ERROR : Action done",
+				"@nonfai1 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.DebugAugmentor
+		class ContribTwo(LibraryContrib):	pass
+		class Two(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribTwo()(
+					handler=non_transmutable_f_ai, init_name="nonfai2", init_level=10
+				)
+
+		self.make_loggy_file(non_transmutable_f_ai)
+		two = Two()
+		two.action()
+		two.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfai2 DEBUG : Action done (augmented)",
+				"@nonfai2 INFO : Action done",
+				"@nonfai2 WARNING : Action done",
+				"@nonfai2 ERROR : Action done",
+				"@nonfai2 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.WarningAugmentor
+		class ContribThree(LibraryContrib):	pass
+		class Three(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribThree()(
+					handler=non_transmutable_f_ai, init_name="nonfai3", init_level=30
+				)
+
+		self.make_loggy_file(non_transmutable_f_ai)
+		three = Three()
+		three.action()
+		three.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfai3 WARNING : Action done (augmented)",
+				"@nonfai3 ERROR : Action done",
+				"@nonfai3 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.ErrorAugmentor
+		class ContribFour(LibraryContrib):	pass
+		class Four(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribFour()(
+					handler=non_transmutable_f_ai, init_name="nonfai4", init_level=40
+				)
+
+		self.make_loggy_file(non_transmutable_f_ai)
+		four = Four()
+		four.action()
+		four.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfai4 ERROR : Action done (augmented)",
+				"@nonfai4 CRITICAL : Action done",
+			]
+		)
+
+		@ContribInterceptingCase.CriticalAugmentor
+		class ContribFive(LibraryContrib):	pass
+		class Five(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribFive()(
+					handler=non_transmutable_f_ai, init_name="nonfai5", init_level=50
+				)
+
+		self.make_loggy_file(non_transmutable_f_ai)
+		five = Five()
+		five.action()
+		five.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_ai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfai5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_f_ai): os.remove(non_transmutable_f_ai)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_object(self):
+
+		non_transmutable_oi = str(self.IRMA_ROOT /"non_transmutable_oi.loggy")
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		nonoi = NonTransmutable()
+
+		logger1 = ContribInterceptingCase.InfoAugmentor(
+			LibraryContrib
+		)()(handler=non_transmutable_oi, init_name="nonoi1")
+
+		self.make_loggy_file(non_transmutable_oi)
+		nonoi.action(logger1)
+		logger1.close()
+		loggy = []
+
+		with open(non_transmutable_oi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonoi1 INFO : Action done (augmented)",
+				"@nonoi1 WARNING : Action done",
+				"@nonoi1 ERROR : Action done",
+				"@nonoi1 CRITICAL : Action done",
+			]
+		)
+
+		logger2 = ContribInterceptingCase.DebugAugmentor(
+			LibraryContrib
+		)()(handler=non_transmutable_oi, init_name="nonoi2", init_level=10)
+
+		self.make_loggy_file(non_transmutable_oi)
+		nonoi.action(logger2)
+		logger2.close()
+		loggy = []
+
+		with open(non_transmutable_oi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonoi2 DEBUG : Action done (augmented)",
+				"@nonoi2 INFO : Action done",
+				"@nonoi2 WARNING : Action done",
+				"@nonoi2 ERROR : Action done",
+				"@nonoi2 CRITICAL : Action done",
+			]
+		)
+
+		logger3 = ContribInterceptingCase.WarningAugmentor(
+			LibraryContrib
+		)()(handler=non_transmutable_oi, init_name="nonoi3", init_level=30)
+
+		self.make_loggy_file(non_transmutable_oi)
+		nonoi.action(logger3)
+		logger3.close()
+		loggy = []
+
+		with open(non_transmutable_oi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonoi3 WARNING : Action done (augmented)",
+				"@nonoi3 ERROR : Action done",
+				"@nonoi3 CRITICAL : Action done",
+			]
+		)
+
+		logger4 = ContribInterceptingCase.ErrorAugmentor(
+			LibraryContrib
+		)()(handler=non_transmutable_oi, init_name="nonoi4", init_level=40)
+
+		self.make_loggy_file(non_transmutable_oi)
+		nonoi.action(logger4)
+		logger4.close()
+		loggy = []
+
+		with open(non_transmutable_oi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonoi4 ERROR : Action done (augmented)",
+				"@nonoi4 CRITICAL : Action done",
+			]
+		)
+
+		logger5 = ContribInterceptingCase.CriticalAugmentor(
+			LibraryContrib
+		)()(handler=non_transmutable_oi, init_name="nonoi5", init_level=50)
+
+		self.make_loggy_file(non_transmutable_oi)
+		nonoi.action(logger5)
+		logger5.close()
+		loggy = []
+
+		with open(non_transmutable_oi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonoi5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_oi): os.remove(non_transmutable_oi)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_object_field(self):
+
+		non_transmutable_ofi = str(self.IRMA_ROOT /"non_transmutable_ofi.loggy")
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		class One(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.InfoAugmentor(
+					LibraryContrib
+				)()(handler=non_transmutable_ofi, init_name="nonofi1")
+
+		self.make_loggy_file(non_transmutable_ofi)
+		one = One()
+		one.action()
+		one.logger.close()
+		loggy = []
+
+		with open(non_transmutable_ofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonofi1 INFO : Action done (augmented)",
+				"@nonofi1 WARNING : Action done",
+				"@nonofi1 ERROR : Action done",
+				"@nonofi1 CRITICAL : Action done",
+			]
+		)
+
+		class Two(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.DebugAugmentor(
+					LibraryContrib
+				)()(handler=non_transmutable_ofi, init_name="nonofi2", init_level=10)
+
+		self.make_loggy_file(non_transmutable_ofi)
+		two = Two()
+		two.action()
+		two.logger.close()
+		loggy = []
+
+		with open(non_transmutable_ofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonofi2 DEBUG : Action done (augmented)",
+				"@nonofi2 INFO : Action done",
+				"@nonofi2 WARNING : Action done",
+				"@nonofi2 ERROR : Action done",
+				"@nonofi2 CRITICAL : Action done",
+			]
+		)
+
+		class Three(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.WarningAugmentor(
+					LibraryContrib
+				)()(handler=non_transmutable_ofi, init_name="nonofi3", init_level=30)
+
+		self.make_loggy_file(non_transmutable_ofi)
+		three = Three()
+		three.action()
+		three.logger.close()
+		loggy = []
+
+		with open(non_transmutable_ofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonofi3 WARNING : Action done (augmented)",
+				"@nonofi3 ERROR : Action done",
+				"@nonofi3 CRITICAL : Action done",
+			]
+		)
+
+		class Four(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.ErrorAugmentor(
+					LibraryContrib
+				)()(handler=non_transmutable_ofi, init_name="nonofi4", init_level=40)
+
+		self.make_loggy_file(non_transmutable_ofi)
+		four = Four()
+		four.action()
+		four.logger.close()
+		loggy = []
+
+		with open(non_transmutable_ofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonofi4 ERROR : Action done (augmented)",
+				"@nonofi4 CRITICAL : Action done",
+			]
+		)
+
+		class Five(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.CriticalAugmentor(
+					LibraryContrib
+				)()(handler=non_transmutable_ofi, init_name="nonofi5", init_level=50)
+
+		self.make_loggy_file(non_transmutable_ofi)
+		five = Five()
+		five.action()
+		five.logger.close()
+		loggy = []
+
+		with open(non_transmutable_ofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonofi5 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_ofi): os.remove(non_transmutable_ofi)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_multi_intercept(self):
+
+		non_transmutable_mi = str(self.IRMA_ROOT /"non_transmutable_mi.loggy")
+		self.make_loggy_file(non_transmutable_mi)
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		nonmi = NonTransmutable()
+
+		@ContribInterceptingCase.CriticalAugmentor
+		@ContribInterceptingCase.ErrorAugmentor
+		@ContribInterceptingCase.WarningAugmentor
+		@ContribInterceptingCase.InfoAugmentor
+		class MultiContrib(LibraryContrib):
+
+			handler		= non_transmutable_mi
+			init_name	= "nonmi"
+
+		logger = MultiContrib()()
+		nonmi.action(logger)
+		logger.close()
+		loggy = []
+
+		with open(non_transmutable_mi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonmi INFO : Action done (augmented)",
+				"@nonmi WARNING : Action done (augmented)",
+				"@nonmi ERROR : Action done (augmented)",
+				"@nonmi CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_mi): os.remove(non_transmutable_mi)
+
+
+
+
+	def test_non_Transmutable_args_multi_intercept(self):
+
+		non_transmutable_mai = str(self.IRMA_ROOT /"non_transmutable_mai.loggy")
+		self.make_loggy_file(non_transmutable_mai)
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		nonmai = NonTransmutable()
+
+		@ContribInterceptingCase.CriticalAugmentor
+		@ContribInterceptingCase.ErrorAugmentor
+		@ContribInterceptingCase.WarningAugmentor
+		@ContribInterceptingCase.InfoAugmentor
+		class MultiContrib(LibraryContrib):	pass
+
+		logger = MultiContrib()(handler=non_transmutable_mai, init_name="nonmai1")
+		nonmai.action(logger)
+		logger.close()
+		loggy = []
+
+		with open(non_transmutable_mai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonmai1 INFO : Action done (augmented)",
+				"@nonmai1 WARNING : Action done (augmented)",
+				"@nonmai1 ERROR : Action done (augmented)",
+				"@nonmai1 CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_mai): os.remove(non_transmutable_mai)
+
+
+
+
+	def test_non_Transmutable_field_multi_intercept(self):
+
+		non_transmutable_f_mi = str(self.IRMA_ROOT /"non_transmutable_f_mi.loggy")
+		self.make_loggy_file(non_transmutable_f_mi)
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		@ContribInterceptingCase.CriticalAugmentor
+		@ContribInterceptingCase.ErrorAugmentor
+		@ContribInterceptingCase.WarningAugmentor
+		@ContribInterceptingCase.InfoAugmentor
+		class MultiContrib(LibraryContrib):
+
+			handler		= non_transmutable_f_mi
+			init_name	= "nonfmi"
+
+		class Non(NonTransmutable):
+			def __init__(self): self.logger = MultiContrib()()
+
+		non = Non()
+		non.action()
+		non.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_mi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfmi INFO : Action done (augmented)",
+				"@nonfmi WARNING : Action done (augmented)",
+				"@nonfmi ERROR : Action done (augmented)",
+				"@nonfmi CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_f_mi): os.remove(non_transmutable_f_mi)
+
+
+
+
+	def test_non_Transmutable_field_args_multi_intercept(self):
+
+		non_transmutable_f_mai = str(self.IRMA_ROOT /"non_transmutable_f_mai.loggy")
+		self.make_loggy_file(non_transmutable_f_mai)
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		@ContribInterceptingCase.CriticalAugmentor
+		@ContribInterceptingCase.ErrorAugmentor
+		@ContribInterceptingCase.WarningAugmentor
+		@ContribInterceptingCase.InfoAugmentor
+		class MultiContrib(LibraryContrib):	pass
+		class Non(NonTransmutable):
+			def __init__(self):
+				self.logger = MultiContrib()(handler=non_transmutable_f_mai, init_name="nonfmai")
+
+		non = Non()
+		non.action()
+		non.logger.close()
+		loggy = []
+
+		with open(non_transmutable_f_mai) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonfmai INFO : Action done (augmented)",
+				"@nonfmai WARNING : Action done (augmented)",
+				"@nonfmai ERROR : Action done (augmented)",
+				"@nonfmai CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_f_mai): os.remove(non_transmutable_f_mai)
+
+
+
+
+	def test_non_Transmutable_multi_object(self):
+
+		non_transmutable_moi = str(self.IRMA_ROOT /"non_transmutable_moi.loggy")
+		self.make_loggy_file(non_transmutable_moi)
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		nonmoi = NonTransmutable()
+
+		logger = ContribInterceptingCase.InfoAugmentor(
+			ContribInterceptingCase.WarningAugmentor(
+				ContribInterceptingCase.ErrorAugmentor(
+					ContribInterceptingCase.CriticalAugmentor(
+						LibraryContrib)
+					)
+				)
+			)()(handler=non_transmutable_moi, init_name="nonmoi")
+
+		nonmoi.action(logger)
+		logger.close()
+		loggy = []
+
+		with open(non_transmutable_moi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonmoi INFO : Action done (augmented)",
+				"@nonmoi WARNING : Action done (augmented)",
+				"@nonmoi ERROR : Action done (augmented)",
+				"@nonmoi CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_moi): os.remove(non_transmutable_moi)
+
+
+
+
+	def test_non_Transmutable_multi_object_field(self):
+
+		non_transmutable_mofi = str(self.IRMA_ROOT /"non_transmutable_mofi.loggy")
+		self.make_loggy_file(non_transmutable_mofi)
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		class Non(NonTransmutable):
+			def __init__(self):
+				self.logger = ContribInterceptingCase.CriticalAugmentor(
+					ContribInterceptingCase.ErrorAugmentor(
+						ContribInterceptingCase.WarningAugmentor(
+							ContribInterceptingCase.InfoAugmentor(
+								LibraryContrib)
+							)
+						)
+					)()(handler=non_transmutable_mofi, init_name="nonmofi")
+
+		non = Non()
+		non.action()
+		non.logger.close()
+		loggy = []
+
+		with open(non_transmutable_mofi) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonmofi INFO : Action done (augmented)",
+				"@nonmofi WARNING : Action done (augmented)",
+				"@nonmofi ERROR : Action done (augmented)",
+				"@nonmofi CRITICAL : Action done (augmented)",
+			]
+		)
+		if	os.path.isfile(non_transmutable_mofi): os.remove(non_transmutable_mofi)
+
+
+
+
+
+
+
+
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

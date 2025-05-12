@@ -108,12 +108,6 @@ class Flourish(Transmutable):
 			case _:			self.loggy.warning(f"Invalid thrivable \"{origin}\" for flourish")
 
 
-
-
-
-
-
-
 	def innervate(self, origin :Copse | Tree, *plant :Tuple[str, Path, List[Path], List[Path]]):
 
 		"""
@@ -222,15 +216,13 @@ class Flourish(Transmutable):
 						self.loggy.debug(f"Invalid Bloom \"{bloom}\" to flourish")
 
 
-
-
 	def __call__(self, *plant :Tuple[str, Path, List[Path], List[Path]]):
 
 
 		if	hasattr(self, "_UPPER_LAYER"):
 			if	plant:
 
-				if	isinstance(reason := unplantable(*plant), str): self.loggy.warning(reason)
+				if isinstance(reason := unplantable(*plant), str): self.loggy.warning(reason)
 				else:
 
 					self.loggy.debug(f"Flourishing {plant[0]}")

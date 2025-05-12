@@ -12,7 +12,7 @@ from	pygwarts.tests.hedwig.unit_hedwig_mail_smtp		import *
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

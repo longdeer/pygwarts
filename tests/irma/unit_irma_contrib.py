@@ -2717,7 +2717,281 @@ class ContribCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+	def test_non_Transmutable(self):
+
+		non_transmutable = str(self.IRMA_ROOT /"non_transmutable.loggy")
+
+		class NonTransmutable:
+			def action(self, logger :LibraryContrib):
+
+				logger.debug("Action done")
+				logger.info("Action done")
+				logger.warning("Action done")
+				logger.error("Action done")
+				logger.critical("Action done")
+
+		logger1 = LibraryContrib(init_name="non1", handler=non_transmutable)
+		logger2 = LibraryContrib(init_name="non2", init_level=10, handler=non_transmutable)
+		logger3 = LibraryContrib(init_name="non3", init_level=30, handler=non_transmutable)
+		logger4 = LibraryContrib(init_name="non4", init_level=40, handler=non_transmutable)
+		logger5 = LibraryContrib(init_name="non5", init_level=50, handler=non_transmutable)
+
+		non = NonTransmutable()
+
+		self.make_loggy_file(non_transmutable)
+		non.action(logger1)
+		logger1.close()
+		loggy = []
+
+		with open(non_transmutable) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@non1 INFO : Action done",
+				"@non1 WARNING : Action done",
+				"@non1 ERROR : Action done",
+				"@non1 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable)
+		non.action(logger2)
+		logger2.close()
+		loggy = []
+
+		with open(non_transmutable) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@non2 DEBUG : Action done",
+				"@non2 INFO : Action done",
+				"@non2 WARNING : Action done",
+				"@non2 ERROR : Action done",
+				"@non2 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable)
+		non.action(logger3)
+		logger3.close()
+		loggy = []
+
+		with open(non_transmutable) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@non3 WARNING : Action done",
+				"@non3 ERROR : Action done",
+				"@non3 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable)
+		non.action(logger4)
+		logger4.close()
+		loggy = []
+
+		with open(non_transmutable) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@non4 ERROR : Action done",
+				"@non4 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable)
+		non.action(logger5)
+		logger5.close()
+		loggy = []
+
+		with open(non_transmutable) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@non5 CRITICAL : Action done",
+			]
+		)
+		if	os.path.isfile(non_transmutable): os.remove(non_transmutable)
+
+
+
+
+
+
+
+
+	def test_non_Transmutable_field(self):
+
+		non_transmutable_field = str(self.IRMA_ROOT /"non_transmutable_field.loggy")
+
+		class NonTransmutable:
+			def action(self):
+
+				self.logger.debug("Action done")
+				self.logger.info("Action done")
+				self.logger.warning("Action done")
+				self.logger.error("Action done")
+				self.logger.critical("Action done")
+
+		class One(NonTransmutable):
+			def __init__(self):
+
+				self.logger = LibraryContrib(
+
+					init_name="nonf1",
+					handler=non_transmutable_field
+				)
+
+		class Two(NonTransmutable):
+			def __init__(self):
+
+				self.logger = LibraryContrib(
+
+					init_name="nonf2",
+					init_level=10,
+					handler=non_transmutable_field
+				)
+
+		class Three(NonTransmutable):
+			def __init__(self):
+
+				self.logger = LibraryContrib(
+
+					init_name="nonf3",
+					init_level=30,
+					handler=non_transmutable_field
+				)
+
+		class Four(NonTransmutable):
+			def __init__(self):
+
+				self.logger = LibraryContrib(
+
+					init_name="nonf4",
+					init_level=40,
+					handler=non_transmutable_field
+				)
+
+		class Five(NonTransmutable):
+			def __init__(self):
+
+				self.logger = LibraryContrib(
+
+					init_name="nonf5",
+					init_level=50,
+					handler=non_transmutable_field
+				)
+
+		self.make_loggy_file(non_transmutable_field)
+		one = One()
+		one.action()
+		one.logger.close()
+		loggy = []
+
+		with open(non_transmutable_field) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonf1 INFO : Action done",
+				"@nonf1 WARNING : Action done",
+				"@nonf1 ERROR : Action done",
+				"@nonf1 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable_field)
+		two = Two()
+		two.action()
+		two.logger.close()
+		loggy = []
+
+		with open(non_transmutable_field) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonf2 DEBUG : Action done",
+				"@nonf2 INFO : Action done",
+				"@nonf2 WARNING : Action done",
+				"@nonf2 ERROR : Action done",
+				"@nonf2 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable_field)
+		three = Three()
+		three.action()
+		three.logger.close()
+		loggy = []
+
+		with open(non_transmutable_field) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonf3 WARNING : Action done",
+				"@nonf3 ERROR : Action done",
+				"@nonf3 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable_field)
+		four = Four()
+		four.action()
+		four.logger.close()
+		loggy = []
+
+		with open(non_transmutable_field) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonf4 ERROR : Action done",
+				"@nonf4 CRITICAL : Action done",
+			]
+		)
+
+		self.make_loggy_file(non_transmutable_field)
+		five = Five()
+		five.action()
+		five.logger.close()
+		loggy = []
+
+		with open(non_transmutable_field) as case_loggy:
+			for line in case_loggy : loggy.append(line.rstrip("\n")[16:])
+
+		self.assertEqual(
+			loggy,
+			[
+				"@nonf5 CRITICAL : Action done",
+			]
+		)
+		if	os.path.isfile(non_transmutable_field): os.remove(non_transmutable_field)
+
+
+
+
+
+
+
+
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

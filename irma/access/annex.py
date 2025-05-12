@@ -123,7 +123,7 @@ class VolumeAnnex(Transmutable):
 	def __call__(self, bookmarks :List[VolumeBookmark]) -> str | None :
 
 		if	isinstance(volume := getattr(self, "_UPPER_LAYER", None), LibraryVolume):
-			self.loggy.debug(f"Fetching volume {volume} annex")
+			self.loggy.info(f"Fetching volume {volume} annex")
 
 
 			if	isinstance(bookmarks, list) and not (volume_view := str()):

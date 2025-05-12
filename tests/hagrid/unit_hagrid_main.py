@@ -41,7 +41,7 @@ from	pygwarts.tests.hagrid.unit_hagrid_medium12	import *
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

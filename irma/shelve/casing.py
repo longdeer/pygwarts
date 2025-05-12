@@ -7,6 +7,8 @@ from collections.abc									import Sequence
 from pygwarts.magical.philosophers_stone				import Transmutable
 from pygwarts.magical.philosophers_stone.transmutations	import ControlledTransmutation
 from pygwarts.magical.spells							import geminio
+from pygwarts.magical.time_turner.timers				import mostsec
+from pygwarts.irma.access.utils							import byte_size_string
 from pygwarts.irma.shelve								import LibraryShelf
 
 
@@ -115,7 +117,7 @@ def num_diff(num1 :int|float|str, num2 :int|float|str) -> str :
 		sign:
 			0 <difference: (+difference);
 			difference <0: (-difference).
-		For difference == 0 special string will be empty. Returns final string that will looks like:
+		For zero difference special string will be empty. Returns final string that will looks like:
 			num1[ (+-difference)]
 		Doesn't handle any Exception.
 	"""
@@ -144,6 +146,51 @@ def seq_diff(seq1 :Sequence, seq2 :Sequence) -> List[str] :
 
 	delta = set(seq1) - set(seq2 or [])
 	return [ f"{item}{' (+)' if item in delta else ''}" for item in seq1 ]
+
+
+
+
+def mostsec_diff(num1 :int|float|str, num2 :int|float|str) -> str :
+
+	"""
+		Helper function, that might be used as "post" callable for handling numerical values, that
+		represent time in seconds. Accepts "num1" and "num2", which must be valid numerical values.
+		This function will obtain a difference between values with built-in "eval". Both "num1" and
+		difference will be converted by "mostsec" to special strings and concatenated to final string,
+		depending on difference sign:
+			0 <difference: (+difference);
+			difference <0: (-difference).
+		For zero difference or zero "num1" both will be represented as "0 s" (zero seconds), so
+		this function will always return difference part. Doesn't handle any Exception.
+	"""
+
+	diff = eval(f"{num1}-{num2 if num2 is not None else 0}")
+	left = f"{' (-' if str(diff).startswith('-') else ' (+'}"
+
+	return f"{mostsec(num1, positive=True) or '0 s'}{left}{mostsec(diff, positive=True) or '0 s'})"
+
+
+
+
+def byte_size_diff(num1 :int|float|str, num2 :int|float|str) -> str :
+
+	"""
+		Helper function, that might be used as "post" callable for handling numerical values,
+		that represent size in bytes. Accepts "num1" and "num2", whuch must be valid numerical
+		values. This function will obtain difference between values with built-in "eval". Both
+		"num1" and difference will be converted by "byte_size_string" to special strings and
+		concatenated to final string, depending on difference sign:
+			0 <difference: (+difference);
+			difference <0: (-difference).
+		For zero difference or zero "num1" both will be represented as "0B" (zero bytes) by
+		"byte_size_string" logic, so this function will always return difference part. Doesn't
+		handle any Exception.
+	"""
+
+	diff = eval(f"{num1}-{num2 if num2 is not None else 0}")
+	left = f"{' (-' if str(diff).startswith('-') else ' (+'}"
+
+	return f"{byte_size_string(num1)}{left}{byte_size_string(abs(diff))})"
 
 
 

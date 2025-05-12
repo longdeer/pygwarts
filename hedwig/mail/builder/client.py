@@ -50,7 +50,6 @@ class ThunderbirdBuilder(LetterBuilder):
 			for sender in current_build["sender"]:
 				self.loggy.info(f"{self} commence {sender.rstrip(';')} letter build")
 
-				print(f"\n\n{os.name = }")
 				if	os.name == "posix":
 
 					final_call = f"thunderbird -compose \"from='{sender}{current_call}\""
@@ -89,10 +88,10 @@ class OutlookBuilder(LetterBuilder):
 	def build(self) -> Dict[str,str | List[str]] | None :
 
 		"""
-			Core method for LetterBuilder implementation of Outlook client. Handles no Exceptions. As letter
-			sending for clients is oriented to letter window construction, return value is fetched by
-			LetterBuilder.build letter dictionary in case "build" was handed to a window, which is only
-			decided by the api call, or None otherwise.
+			Core method for LetterBuilder implementation of Outlook client. Handles only win api Exceptions.
+			As letter sending for clients is oriented to letter window construction, return value is
+			fetched by LetterBuilder.build letter dictionary in case "build" was handed to a window,
+			which is only decided by the api call, or None otherwise.
 		"""
 
 		try:

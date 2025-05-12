@@ -114,7 +114,7 @@ class LibraryVolume(KeyChest):
 			try:
 
 				with open(self.location) as volume:
-					self.loggy.debug(f"Location \"{self.location}\" access granted")
+					self.loggy.info(f"Location \"{self.location}\" access granted")
 
 					for line in volume : yield line.rstrip("\n")
 			except	Exception as E:

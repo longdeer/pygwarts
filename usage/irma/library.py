@@ -4,6 +4,8 @@ from pygwarts.irma.contrib						import LibraryContrib
 from pygwarts.irma.shelve						import LibraryShelf
 from pygwarts.irma.shelve.casing				import is_num
 from pygwarts.irma.shelve.casing				import num_diff
+from pygwarts.irma.shelve.casing				import mostsec_diff
+from pygwarts.irma.shelve.casing				import byte_size_diff
 from pygwarts.irma.access						import LibraryAccess
 from pygwarts.irma.access.volume				import LibraryVolume
 from pygwarts.irma.access.bookmarks				import VolumeBookmark
@@ -27,8 +29,8 @@ from pygwarts.irma.access.annex					import VolumeAnnex
 from pygwarts.irma.access.annex					import LibraryAnnex
 from pygwarts.irma.access.utils					import TextWrapper
 from pygwarts.filch.marauders_map				import MaraudersMap
-from casing										import mostsec_diff
-from casing										import byte_size_diff
+from pygwarts.filch.linkindor.arp				import ARPResponseInspector
+from pygwarts.filch.linkindor.arp				import ARPRequestInspector
 from bookmarks									import DiscoveryWatch
 from bookmarks									import BroadWatch
 from inducers									import DiffCaseRegisterRecapAccumulatorInducer
@@ -49,7 +51,7 @@ class Irma(LibraryAccess):
 			total and average execution time with invocation count;
 			LibraryShelf producing and removing count;
 			all hagrid planting messages;
-			all filch HostDiscovery information;
+			all filch ARPDiscovery information;
 			all filch ARPSniffer information with requests graph plotting.
 		Uses MaraudersMap hosts recognizing for filch messages. Uses TextWrapper and ViewWrapper decorators
 		for formatting. Uses shelf casing functionality for statistics maintaining.
@@ -60,6 +62,9 @@ class Irma(LibraryAccess):
 		handler		= "logger file path (optional)"
 		init_name	= "hagrid (optional)"
 
+
+	@Callstamp
+	class Annex(LibraryAnnex): 		pass
 	class filchmap(MaraudersMap):	pass
 	class library_shelf(LibraryShelf):
 
@@ -70,8 +75,7 @@ class Irma(LibraryAccess):
 	unique		= True				# Inducers flag to return only unique values (no duplicates)
 	joint		= ", "				# Inducers string to join values with in final string
 
-	@Callstamp
-	class Annex(LibraryAnnex): 		pass
+
 
 
 	@ViewWrapper("\nWARNINGS: ")
@@ -126,6 +130,7 @@ class Irma(LibraryAccess):
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class Inducer(RegisterCounterInducer): filter = posnum
 
+
 	class ShelfProduces(VolumeBookmark):
 
 		trigger	= "successfully produced"
@@ -135,6 +140,7 @@ class Irma(LibraryAccess):
 			@TextWrapper("\nshelve produced: ")
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class Inducer(RegisterCounterInducer): filter = posnum
+
 
 	class GrownCounter(VolumeBookmark):
 
@@ -149,6 +155,7 @@ class Irma(LibraryAccess):
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
 
+
 	class MovedCounter(VolumeBookmark):
 
 		trigger		= "Moved leaf"
@@ -161,6 +168,7 @@ class Irma(LibraryAccess):
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
+
 
 	class ClonedCounter(VolumeBookmark):
 
@@ -175,6 +183,7 @@ class Irma(LibraryAccess):
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
 
+
 	class PushedCounter(VolumeBookmark):
 
 		trigger		= "Pushed leaf"
@@ -187,6 +196,7 @@ class Irma(LibraryAccess):
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
+
 
 	class ThrivedCounter(VolumeBookmark):
 
@@ -201,6 +211,7 @@ class Irma(LibraryAccess):
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
 
+
 	class TrimmedLeafsCounter(VolumeBookmark):
 
 		trigger		= "Trimmed leaf"
@@ -213,6 +224,7 @@ class Irma(LibraryAccess):
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
+
 
 	class TrimmedTwigsCounter(VolumeBookmark):
 
@@ -227,15 +239,18 @@ class Irma(LibraryAccess):
 			class CountInducer(RegisterCounterInducer): filter = posnum
 			class ReprInducer(DiffCaseRegisterRecapAccumulatorInducer):	pass
 
+
 	class WieghtCounter(VolumeBookmark):
 
 		trigger	= "INFO : Size:"
 		rpattern= r".+ Size: (?P<target>\d+)$"
 
 		class Handler(TargetHandler):
+
 			@TextWrapper("\ntotal space: ")
 			@InducerCase("library_shelf", prep=is_num, post=byte_size_diff)
 			class Inducer(RegisterRecapInducer):						pass
+
 
 	class TwigsCounter(VolumeBookmark):
 
@@ -243,9 +258,11 @@ class Irma(LibraryAccess):
 		rpattern= r".+ Twigs: (?P<target>\d+)$"
 
 		class Handler(TargetHandler):
+
 			@TextWrapper("\nfolders: ")
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class Inducer(RegisterRecapInducer):						pass
+
 
 	class LeafsCounter(VolumeBookmark):
 
@@ -253,50 +270,64 @@ class Irma(LibraryAccess):
 		rpattern= r".+ Leafs: (?P<target>\d+)$"
 
 		class Handler(TargetHandler):
+
 			@TextWrapper("\nfiles: ")
 			@InducerCase("library_shelf", prep=is_num, post=num_diff)
 			class Inducer(RegisterRecapInducer):						pass
+
+
 
 
 	class SoftSync(LibraryVolume):
 
 		inrange		= "date string to parse loggy with"
 		location	= "loggy file path to parse"
+
 		@TextWrapper("\n\thagrid-softsync\n","\n")
 		class Annex(VolumeAnnex):		pass
+
 
 	class HardSync(LibraryVolume):
 
 		inrange		= "date string to parse loggy with"
 		location	= "loggy file path to parse"
+
 		@TextWrapper("\n\thagrid-hardsync\n","\n")
 		class Annex(VolumeAnnex):		pass
+
 
 	class Arch(LibraryVolume):
 
 		inrange		= "date string to parse loggy with"
 		location	= "loggy file path to parse"
+
 		@TextWrapper("\n\thagrid-arch\n","\n")
 		class Annex(VolumeAnnex):		pass
+
 
 	class Discovery(LibraryVolume):
 
 		inrange		= "date string to parse loggy with"
 		location	= "loggy file path to parse"
+
 		@TextWrapper("\n\tfilch-discovery\n","\n")
-		class Annex(VolumeAnnex):		pass
-		class filchmap(MaraudersMap):	pass
-		class Watch(DiscoveryWatch):	pass
+		class Annex(VolumeAnnex):				pass
+		class filchmap(MaraudersMap):			pass
+		class Inspector(ARPResponseInspector):	pass
+		class Watch(DiscoveryWatch):			pass
+
 
 	class Broad(LibraryVolume):
 
 		inrange		= "date string to parse loggy with"
 		location	= "loggy file path to parse"
 		plotdir		= "directory for ARP requests stat graphs"
-		plotdate	= TimeTurner		# TimeTurner object for graph plotting
+		plotdate	:TimeTurner			# TimeTurner object for graph plotting
+
 		@TextWrapper("\n\tfilch-broadwatch\n","\n")
-		class Annex(VolumeAnnex):		pass
-		class Watch(BroadWatch):		pass
+		class Annex(VolumeAnnex):				pass
+		class Inspector(ARPRequestInspector):	pass
+		class Watch(BroadWatch):				pass
 
 
 

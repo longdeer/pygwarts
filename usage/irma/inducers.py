@@ -241,6 +241,7 @@ class FilchWatchInducer(AccessInducer):
 
 		""" Helper method for plotting ARP requests graph of requests number to hours """
 
+
 		pyplot.figure(figsize=(Xlength,Ylength))
 		pyplot.title(title, fontsize=fontsize)
 

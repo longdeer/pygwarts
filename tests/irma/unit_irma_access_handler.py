@@ -101,6 +101,123 @@ class AccessHandlerCase(IrmaTestCase):
 
 
 
+	def test_registered_valid(self):
+
+		class TestVolume(LibraryVolume):
+			class TestBookmark(VolumeBookmark):
+
+				trigger = "place for trigger"
+				class Handler(AccessHandler): pass
+
+		self.test_case = TestVolume()
+		handler = AccessHandler()
+		volume = LibraryVolume()
+
+		self.assertNotIn(self.test_case.TestBookmark.Handler, self.test_case)
+		self.assertTrue(self.test_case.TestBookmark.Handler.registered(self.test_case))
+		self.assertIn(self.test_case.TestBookmark.Handler, self.test_case)
+
+		self.assertNotIn(handler, self.test_case)
+		self.assertTrue(handler.registered(self.test_case))
+		self.assertIn(handler, self.test_case)
+
+		self.assertNotIn(self.test_case.TestBookmark.Handler, volume)
+		self.assertTrue(self.test_case.TestBookmark.Handler.registered(volume))
+		self.assertIn(self.test_case.TestBookmark.Handler, volume)
+
+		self.assertNotIn(handler, volume)
+		self.assertTrue(handler.registered(volume))
+		self.assertIn(handler, volume)
+
+
+	def test_registered_invalid(self):
+
+		class TestVolume(LibraryVolume):
+			class TestBookmark(VolumeBookmark):
+
+				trigger = "place for trigger"
+				class Handler(AccessHandler): pass
+
+		self.test_case = TestVolume()
+		handler = AccessHandler()
+
+		for invalid in (
+
+			420, 69., True, False, None, ..., print, unittest, LibraryVolume,
+			[ LibraryVolume ],( LibraryVolume, ),{ LibraryVolume },{ "volume": LibraryVolume }
+		):
+			self.assertIsNone(self.test_case.TestBookmark.Handler.registered(invalid))
+			self.assertIsNone(handler.registered(invalid))
+
+
+	def test_registered_invalid_mapping(self):
+
+		class TestVolume(LibraryVolume):
+			class loggy(LibraryContrib):
+
+				handler		= self.ACCESS_HANDLER
+				init_name	= "registered_invalid_mapping"
+				init_level	= 10
+
+			class TestBookmark(VolumeBookmark):
+
+				trigger = "place for trigger"
+				class Handler(AccessHandler): pass
+
+		self.test_case = TestVolume()
+		handler = AccessHandler()
+		volume = LibraryVolume()
+
+		for invalid in (
+
+			420, 69., True, False, ..., print, unittest, LibraryVolume,
+			[ LibraryVolume ],( LibraryVolume, ),{ LibraryVolume }
+		):
+			with self.subTest(mapping=invalid):
+
+				self.test_case[self.test_case.TestBookmark.Handler] = invalid
+				self.assertEqual(self.test_case[self.test_case.TestBookmark.Handler], invalid)
+
+				with self.assertLogs("registered_invalid_mapping", 10) as case_loggy:
+					self.assertIsNone(self.test_case.TestBookmark.Handler.registered(self.test_case))
+
+				self.assertEqual(self.test_case[self.test_case.TestBookmark.Handler], invalid)
+				self.assertIn(
+
+					f"DEBUG:registered_invalid_mapping:Invalid mapping in {self.test_case} volume",
+					case_loggy.output
+				)
+
+				volume[self.test_case.TestBookmark.Handler] = invalid
+				self.assertEqual(volume[self.test_case.TestBookmark.Handler], invalid)
+
+				with self.assertLogs("registered_invalid_mapping", 10) as case_loggy:
+					self.assertIsNone(self.test_case.TestBookmark.Handler.registered(volume))
+
+				self.assertEqual(volume[self.test_case.TestBookmark.Handler], invalid)
+				self.assertIn(
+
+					f"DEBUG:registered_invalid_mapping:Invalid mapping in {volume} volume",
+					case_loggy.output
+				)
+
+				self.test_case[handler] = invalid
+				self.assertEqual(self.test_case[handler], invalid)
+				self.assertIsNone(handler.registered(self.test_case))
+				self.assertEqual(self.test_case[handler], invalid)
+
+				volume[handler] = invalid
+				self.assertEqual(volume[handler], invalid)
+				self.assertIsNone(handler.registered(volume))
+				self.assertEqual(volume[handler], invalid)
+
+
+
+
+
+
+
+
 	def test_AccessHandlerRegisterCounter_no_link(self):
 
 		class TestVolume(LibraryVolume):
@@ -736,7 +853,7 @@ class AccessHandlerCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

@@ -22,17 +22,17 @@ if	__name__ == "__main__" :
 
 			"pygwarts unit tests module.\n"
 			"Current tests count:\n"
-			"total:   1099\n"
+			"total:   1128\n"
 			"magical: 455\n"
+			"irma:    262\n"
 			"hagrid:  240\n"
-			"irma:    235\n"
-			"filch:   96\n"
+			"filch:   98\n"
 			"hedwig:  73\n"
 			"\n"
 		),
 		epilog=str(
 
-			"pygwarts 1.4.9.6"
+			"pygwarts 1.5.1.4"
 			"\nlngd\n\n"
 		),
 		formatter_class=argparse.RawDescriptionHelpFormatter

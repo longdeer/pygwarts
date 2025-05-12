@@ -85,6 +85,7 @@ class TelegramHoist(PoolHoist):
 
 						delay += 1
 
+
 				except	Exception as E : self.pool_debug(f"Buffer chunk {delay} failed due to {patronus(E)}")
 				return	buffer_dump
 

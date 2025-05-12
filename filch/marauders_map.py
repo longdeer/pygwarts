@@ -20,14 +20,14 @@ class MaraudersMap(KeyChest):
 	"""
 		filch utility class that serves as a runtime database for network traffic. Allows mapping of
 		hosts addresses with corresponding information to be accessed as a dictionary. For current
-		implementation following mapping can be maintained:
-					MAC		(host physical address)
-			IP4		NAME	(host alias/netbios name)
-					DESC	(host description)
-		and also
-					IP4		(host IP version 4 address)
-			MAC		NAME	(host alias/netbios name)
-					DESC	(host description)
+		implementation following mapping can be maintained in "IP4" subdictionary:
+							MAC		(host physical address)
+			IP4 address		NAME	(host alias/netbios name)
+							DESC	(host description)
+		and also in "MAC" subdictionary:
+							IP4		(host IP version 4 address)
+			MAC address		NAME	(host alias/netbios name)
+							DESC	(host description)
 		According to scheme above, there will be two dictionaries in a KeyChest, IP4 and MAC. Every IP4
 		and MAC addresses will be mapped with each other in corresponding dictionary, along with two
 		additional fields. It is possible to have only IP4 or MAC for mapping, so it will be mapped with

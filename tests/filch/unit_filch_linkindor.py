@@ -15,8 +15,11 @@ from	pygwarts.filch.linkindor			import GP_O1_VALID_MAC
 from	pygwarts.filch.linkindor			import GP_O2_VALID_MAC
 from	pygwarts.filch.linkindor			import is_valid_MAC
 from	pygwarts.filch.linkindor			import EUI48_format
-from	pygwarts.filch.linkindor.discovery	import HostDiscovery
-from	pygwarts.filch.linkindor.sniffing	import ARPSniffer
+from	pygwarts.filch.linkindor.arp		import ARPDiscovery
+from	pygwarts.filch.linkindor.arp		import ARPSniffer
+from	pygwarts.filch.linkindor.arp		import ARPRequestInspector
+from	pygwarts.filch.linkindor.arp		import ARPResponseInspector
+from	pygwarts.filch.marauders_map		import MaraudersMap
 
 
 
@@ -2188,17 +2191,17 @@ class LinkindorCase(FilchTestCase):
 
 
 
-	def test_HostDiscovery(self):
+	def test_ARPDiscovery(self):
 
 		# Host discovery packet builder example. Will try to send an ARP request from some ip4 and
 		# some interface with target ip4 address specified, and receive an answer.
 		# It is assumed scappy 2.5.0rc3 installed, as was originally desinged.
 
-		class TestDiscovery(HostDiscovery):
+		class TestDiscovery(ARPDiscovery):
 			class loggy(LibraryContrib):
 
 				handler		= self.LINKINDOR_HANDLER
-				init_name	= "HostDiscovery"
+				init_name	= "ARPDiscovery"
 				init_level	= 10
 
 		self.test_case = TestDiscovery()
@@ -2252,39 +2255,39 @@ class LinkindorCase(FilchTestCase):
 
 
 
-	def test_HostDiscovery_invalid_ip(self):
+	def test_ARPDiscovery_invalid_ip(self):
 
-		class TestDiscovery(HostDiscovery):
+		class TestDiscovery(ARPDiscovery):
 			class loggy(LibraryContrib):
 
 				handler		= self.LINKINDOR_HANDLER
-				init_name	= "HostDiscovery_invalid_ip"
+				init_name	= "ARPDiscovery_invalid_ip"
 				init_level	= 10
 
 		self.test_case = TestDiscovery()
 		for invalid in (
 
-			"10.10.10.300", "LOL", 42, 69., True, False, None, ..., print, HostDiscovery,
+			"10.10.10.300", "LOL", 42, 69., True, False, None, ..., print, ARPDiscovery,
 			[ "10.10.10.10" ],( "10.10.10.10", ),{ "10.10.10.10" },{ "target": "10.10.10.10" }
 		):
 			with self.subTest(ip=invalid):
-				with self.assertLogs("HostDiscovery_invalid_ip", 10) as case_loggy:
+				with self.assertLogs("ARPDiscovery_invalid_ip", 10) as case_loggy:
 
 					self.assertIsNone(self.test_case(invalid, lambda : None))
 			self.assertIn(
-				f"DEBUG:HostDiscovery_invalid_ip:Invalid IP4 address \"{invalid}\"", case_loggy.output
+				f"DEBUG:ARPDiscovery_invalid_ip:Invalid IP4 address \"{invalid}\"", case_loggy.output
 			)
 
 
 
 
-	def test_HostDiscovery_invalid_discoverer(self):
+	def test_ARPDiscovery_invalid_discoverer(self):
 
-		class TestDiscovery(HostDiscovery):
+		class TestDiscovery(ARPDiscovery):
 			class loggy(LibraryContrib):
 
 				handler		= self.LINKINDOR_HANDLER
-				init_name	= "HostDiscovery_invalid_discoverer"
+				init_name	= "ARPDiscovery_invalid_discoverer"
 				init_level	= 10
 
 		self.test_case = TestDiscovery()
@@ -2294,35 +2297,35 @@ class LinkindorCase(FilchTestCase):
 			[ print ],( print, ),{ print },{ "discoverer": print }
 		):
 			with self.subTest(discoverer=invalid):
-				with self.assertLogs("HostDiscovery_invalid_discoverer", 10) as case_loggy:
+				with self.assertLogs("ARPDiscovery_invalid_discoverer", 10) as case_loggy:
 
 					self.assertIsNone(self.test_case("10.10.10.10", invalid))
 			self.assertIn(
 
-				f"DEBUG:HostDiscovery_invalid_discoverer:Invalid discoverer \"{invalid}\"",
+				f"DEBUG:ARPDiscovery_invalid_discoverer:Invalid discoverer \"{invalid}\"",
 				case_loggy.output
 			)
 
 
 
 
-	def test_HostDiscovery_raise(self):
+	def test_ARPDiscovery_raise(self):
 
-		class TestDiscovery(HostDiscovery):
+		class TestDiscovery(ARPDiscovery):
 			class loggy(LibraryContrib):
 
 				handler		= self.LINKINDOR_HANDLER
-				init_name	= "HostDiscovery_raise"
+				init_name	= "ARPDiscovery_raise"
 				init_level	= 10
 
 		def raiser(*args, **kwargs): raise ValueError("The value is not enough")
 		self.test_case = TestDiscovery()
-		with self.assertLogs("HostDiscovery_raise", 10) as case_loggy:
+		with self.assertLogs("ARPDiscovery_raise", 10) as case_loggy:
 			self.assertIsNone(self.test_case("10.10.10.10", raiser))
 
 		self.assertIn(
 
-			f"DEBUG:HostDiscovery_raise:Discovery failed due to ValueError: The value is not enough",
+			f"DEBUG:ARPDiscovery_raise:Discovery failed due to ValueError: The value is not enough",
 			case_loggy.output
 		)
 
@@ -2331,7 +2334,7 @@ class LinkindorCase(FilchTestCase):
 
 	def test_PoolDiscovery(self):
 
-		class TestDiscovery(HostDiscovery):
+		class TestDiscovery(ARPDiscovery):
 			class loggy(LibraryContrib):
 
 				handler		= self.LINKINDOR_HANDLER
@@ -2447,7 +2450,1144 @@ class LinkindorCase(FilchTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+	def test_ARPRequestInspector_states(self):
+
+		class Inspector(ARPRequestInspector):
+			class filchmap(MaraudersMap): pass
+
+		inspector = Inspector()
+		inspector.filchmap(
+
+			"10.10.0.1",
+			{
+				"MAC":	"12:34:56:78:9a:bc",
+				"NAME":	"host-one",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"10.10.0.2",
+			{
+				"MAC":	"23:45:67:89:ab:cd",
+				"NAME":	"host-two",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"10.10.0.3",
+			{
+				"MAC":	"34:56:78:9a:bc:de",
+				"NAME":	"host-three",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"10.10.0.4",
+			{
+				"MAC":	"34:56:78:9a:bc:de",
+				"NAME":	"host-three-two",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"12:34:56:78:9a:bc",
+			{
+				"IP4":	"10.10.0.1",
+				"NAME":	"host-one",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"23:45:67:89:ab:cd",
+			{
+				"IP4":	"10.10.0.2",
+				"NAME":	"host-two",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"34:56:78:9a:bc:de",
+			{
+				"IP4":	"10.10.0.3",
+				"NAME":	"host-three",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"34:56:78:9a:bc:de",
+			{
+				"IP4":	"10.10.0.4",
+				"NAME":	"host-three-two",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.3 (34:56:78:9a:bc:de)"),
+			{
+				"state":				509,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.5 (23:45:67:89:ab:cd)"),
+			{
+				"state":				996,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.5 (34:56:78:9a:bc:de)"),
+			{
+				"state":				996,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.1 says 0.0.0.0 (12:34:56:78:9a:bc)"),
+			{
+				"state":				998,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.1",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"12:34:56:78:9a:bc",
+				"target ip4 to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 0.0.0.0 (34:56:78:9a:bc:de)"),
+			{
+				"state":				998,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.1 (23:45:67:89:ab:cd)"),
+			{
+				"state":				1021,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.5 says 10.10.0.1 (12:34:56:78:9a:bc)"),
+			{
+				"state":				1145,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.5",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.5 says 10.10.0.3 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1145,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.5",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.5 says 10.10.0.4 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1145,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.5",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.1 (12:34:56:78:9a:bc)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.1 says 10.10.0.4 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.1",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"12:34:56:78:9a:bc",
+				"target ip4 to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.1 says 10.10.0.3 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.1",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"12:34:56:78:9a:bc",
+				"target ip4 to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.4 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.1 (12:34:56:78:9a:bc)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.1 (12:34:56:78:9a:bc)"),
+			{
+				"state":				1533,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.5 (01:23:45:67:89:ab)"),
+			{
+				"state":				1536,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 0.0.0.0 (01:23:45:67:89:ab)"),
+			{
+				"state":				1538,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.2 (01:23:45:67:89:ab)"),
+			{
+				"state":				1561,
+				"source ip4":			"10.10.0.2",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.5 (23:45:67:89:ab:cd)"),
+			{
+				"state":				1632,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.5 (34:56:78:9a:bc:de)"),
+			{
+				"state":				1632,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 0.0.0.0 (23:45:67:89:ab:cd)"),
+			{
+				"state":				1634,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.1 (23:45:67:89:ab:cd)"),
+			{
+				"state":				1657,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.5 (01:23:45:67:89:ab)"),
+			{
+				"state":				1924,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.5 (01:23:45:67:89:ab)"),
+			{
+				"state":				1924,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.5 (01:23:45:67:89:ab)"),
+			{
+				"state":				1924,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 0.0.0.0 (01:23:45:67:89:ab)"),
+			{
+				"state":				1926,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 0.0.0.0 (01:23:45:67:89:ab)"),
+			{
+				"state":				1926,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 0.0.0.0 (01:23:45:67:89:ab)"),
+			{
+				"state":				1926,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.1 (01:23:45:67:89:ab)"),
+			{
+				"state":				1949,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.3 (01:23:45:67:89:ab)"),
+			{
+				"state":				1949,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.4 (01:23:45:67:89:ab)"),
+			{
+				"state":				1949,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.5 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2020,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.5 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2020,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.5 (34:56:78:9a:bc:de)"),
+			{
+				"state":				2020,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 0.0.0.0 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2022,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 0.0.0.0 (34:56:78:9a:bc:de)"),
+			{
+				"state":				2022,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 0.0.0.0 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2022,
+				"source ip4":			"0.0.0.0",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.3 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.1 (34:56:78:9a:bc:de)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.2 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.2",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.3 (23:45:67:89:ab:cd)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.2",
+				"source MAC to name":	"host-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.2 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.2",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.4 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2045,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.1 says 10.10.0.1 (12:34:56:78:9a:bc)"),
+			{
+				"state":				2557,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.1",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"12:34:56:78:9a:bc",
+				"target ip4 to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.4 (34:56:78:9a:bc:de)"),
+			{
+				"state":				2557,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.3 (34:56:78:9a:bc:de)"),
+			{
+				"state":				3581,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"34:56:78:9a:bc:de",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.4",
+				"source MAC to name":	"host-three-two",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.5 says 10.10.0.5 (01:23:45:67:89:ab)"),
+			{
+				"state":				3584,
+				"source ip4":			"10.10.0.5",
+				"target ip4":			"10.10.0.5",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.6 says 10.10.0.6 (12:34:56:78:9a:bc)"),
+			{
+				"state":				3680,
+				"source ip4":			"10.10.0.6",
+				"target ip4":			"10.10.0.6",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	None,
+				"target ip4 to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.1 says 10.10.0.1 (01:23:45:67:89:ab)"),
+			{
+				"state":				3997,
+				"source ip4":			"10.10.0.1",
+				"target ip4":			"10.10.0.1",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"12:34:56:78:9a:bc",
+				"target ip4 to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.4 (01:23:45:67:89:ab)"),
+			{
+				"state":				3997,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.3 (01:23:45:67:89:ab)"),
+			{
+				"state":				3997,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.2 says 10.10.0.2 (12:34:56:78:9a:bc)"),
+			{
+				"state":				4093,
+				"source ip4":			"10.10.0.2",
+				"target ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"23:45:67:89:ab:cd",
+				"target ip4 to name":	"host-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.4 says 10.10.0.4 (12:34:56:78:9a:bc)"),
+			{
+				"state":				4093,
+				"source ip4":			"10.10.0.4",
+				"target ip4":			"10.10.0.4",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("who has 10.10.0.3 says 10.10.0.3 (12:34:56:78:9a:bc)"),
+			{
+				"state":				4093,
+				"source ip4":			"10.10.0.3",
+				"target ip4":			"10.10.0.3",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"34:56:78:9a:bc:de",
+				"source ip4 to name":	"host-three",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+				"target ip4 to MAC":	"34:56:78:9a:bc:de",
+				"target ip4 to name":	"host-three",
+			}
+		)
+
+
+
+
+
+
+
+
+	def test_ARPResponseInspector_states(self):
+
+		class Inspector(ARPResponseInspector):
+			class filchmap(MaraudersMap): pass
+
+		inspector = Inspector()
+		inspector.filchmap(
+
+			"10.10.0.1",
+			{
+				"MAC":	"12:34:56:78:9a:bc",
+				"NAME":	"host-one",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"10.10.0.2",
+			{
+				"MAC":	"23:45:67:89:ab:cd",
+				"NAME":	"host-two",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"10.10.0.3",
+			{
+				"MAC":	"23:45:67:89:ab:cd",
+				"NAME":	"host-two-two",
+				"DESC":	"not necessary"
+			},
+			"IP4",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"12:34:56:78:9a:bc",
+			{
+				"IP4":	"10.10.0.1",
+				"NAME":	"host-one",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"23:45:67:89:ab:cd",
+			{
+				"IP4":	"10.10.0.2",
+				"NAME":	"host-two",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		inspector.filchmap(
+
+			"23:45:67:89:ab:cd",
+			{
+				"IP4":	"10.10.0.3",
+				"NAME":	"host-two-two",
+				"DESC":	"not necessary"
+			},
+			"MAC",
+			mapped=False
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.1", "12:34:56:78:9a:bc"),
+			{
+				"state":				63,
+				"source ip4":			"10.10.0.1",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.3", "23:45:67:89:ab:cd"),
+			{
+				"state":				63,
+				"source ip4":			"10.10.0.3",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two-two",
+				"source MAC to ip4":	"10.10.0.3",
+				"source MAC to name":	"host-two-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.2", "23:45:67:89:ab:cd"),
+			{
+				"state":				159,
+				"source ip4":			"10.10.0.2",
+				"source MAC":			"23:45:67:89:ab:cd",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	"10.10.0.3",
+				"source MAC to name":	"host-two-two",
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.1", "01:23:45:67:89:ab"),
+			{
+				"state":				199,
+				"source ip4":			"10.10.0.1",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	"12:34:56:78:9a:bc",
+				"source ip4 to name":	"host-one",
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.4", "12:34:56:78:9a:bc"),
+			{
+				"state":				216,
+				"source ip4":			"10.10.0.4",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.2", "12:34:56:78:9a:bc"),
+			{
+				"state":				223,
+				"source ip4":			"10.10.0.2",
+				"source MAC":			"12:34:56:78:9a:bc",
+				"source ip4 to MAC":	"23:45:67:89:ab:cd",
+				"source ip4 to name":	"host-two",
+				"source MAC to ip4":	"10.10.0.1",
+				"source MAC to name":	"host-one",
+			}
+		)
+		self.assertEqual(
+
+			inspector("10.10.0.5", "01:23:45:67:89:ab"),
+			{
+				"state":				224,
+				"source ip4":			"10.10.0.5",
+				"source MAC":			"01:23:45:67:89:ab",
+				"source ip4 to MAC":	None,
+				"source ip4 to name":	None,
+				"source MAC to ip4":	None,
+				"source MAC to name":	None,
+			}
+		)
+
+
+
+
+
+
+
+
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

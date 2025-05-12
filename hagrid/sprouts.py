@@ -39,10 +39,7 @@ class fssprout(ControlledTransmutation):
 		valid sprouts, bypassing failed.
 	"""
 
-
-	def __init__(self, sprout :str):
-		self.sprout = sprout
-
+	def __init__(self, sprout :str): self.sprout = sprout
 	def _mutable_chain_injection(self, mutable_layer :Transmutable) -> Transmutable :
 
 		sprout	= self.sprout
@@ -68,7 +65,7 @@ class fssprout(ControlledTransmutation):
 					for	plant in plan:
 
 
-						if	plant : super().__call__(sprout, *plant)
+						if plant : super().__call__(sprout, *plant)
 				elif	isinstance(reason, str): self.loggy.critical(reason)
 
 

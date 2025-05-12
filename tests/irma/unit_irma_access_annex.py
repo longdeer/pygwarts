@@ -78,7 +78,7 @@ class AccessAnnexCases(IrmaTestCase):
 				"OOH EEH\nOOH AH AH\nTING TANG\nWALLA WALLA BING BANG\n"
 			)
 
-		self.assertIn(f"DEBUG:volume_annex:Fetching volume {self.test_case} annex", case_loggy.output)
+		self.assertIn(f"INFO:volume_annex:Fetching volume {self.test_case} annex", case_loggy.output)
 		self.assertIn(f"DEBUG:volume_annex:{self.test_case.B1} bookmark view 8 symbols", case_loggy.output)
 		self.assertIn(f"DEBUG:volume_annex:{self.test_case.B2} bookmark view 10 symbols", case_loggy.output)
 		self.assertIn(f"DEBUG:volume_annex:{self.test_case.B3} bookmark view 10 symbols", case_loggy.output)
@@ -115,7 +115,7 @@ class AccessAnnexCases(IrmaTestCase):
 		with self.assertLogs("volume_empty_annex", 10) as case_loggy:
 			self.assertIsNone(self.test_case.Annex(self.test_case.keysof("bookmark")))
 
-		self.assertIn(f"DEBUG:volume_empty_annex:Fetching volume {self.test_case} annex", case_loggy.output)
+		self.assertIn(f"INFO:volume_empty_annex:Fetching volume {self.test_case} annex", case_loggy.output)
 		self.assertIn(
 
 			"DEBUG:volume_empty_annex:OOH EEH failed due to TypeError: 'str' object is not callable",
@@ -179,7 +179,7 @@ class AccessAnnexCases(IrmaTestCase):
 			self.assertIsNone(self.test_case.Annex(self.test_case.keysof("bookmark")))
 
 		self.assertIn(
-			f"DEBUG:volume_not_viewable_annex:Fetching volume {self.test_case} annex", case_loggy.output
+			f"INFO:volume_not_viewable_annex:Fetching volume {self.test_case} annex", case_loggy.output
 		)
 		self.assertIn(
 			f"DEBUG:volume_not_viewable_annex:{self.test_case.B1} is not viewable", case_loggy.output
@@ -197,7 +197,7 @@ class AccessAnnexCases(IrmaTestCase):
 		)
 		self.assertEqual(
 			case_loggy.output.count(
-				f"DEBUG:volume_not_viewable_annex:Fetching volume {self.test_case} annex"
+				f"INFO:volume_not_viewable_annex:Fetching volume {self.test_case} annex"
 			),	12
 		)
 		self.assertEqual(
@@ -291,7 +291,7 @@ class AccessAnnexCases(IrmaTestCase):
 
 		self.assertIn(
 
-			f"DEBUG:volume_not_string_views_annex:Fetching volume {self.test_case} annex",
+			f"INFO:volume_not_string_views_annex:Fetching volume {self.test_case} annex",
 			case_loggy.output
 		)
 		self.assertIn(
@@ -571,7 +571,7 @@ class AccessAnnexCases(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

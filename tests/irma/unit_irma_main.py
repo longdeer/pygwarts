@@ -18,7 +18,7 @@ from	pygwarts.tests.irma.unit_irma_shelf_casing		import *
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

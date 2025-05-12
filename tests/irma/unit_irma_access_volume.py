@@ -200,7 +200,7 @@ class AccessVolumeCase(IrmaTestCase):
 				[ "OOH", "EEH", "OOH", "AH", "AH", "TING", "TANG", "WALLA", "WALLA", "BING", "BANG" ]
 			)
 		self.assertIn(
-			f"DEBUG:read_generator:Location \"{self.some_location}\" access granted", case_loggy.output
+			f"INFO:read_generator:Location \"{self.some_location}\" access granted", case_loggy.output
 		)
 		self.assertEqual(self.test_case.is_located(), self.some_location)
 
@@ -214,7 +214,7 @@ class AccessVolumeCase(IrmaTestCase):
 				[ "OOH", "EEH", "OOH", "AH", "AH", "TING", "TANG", "WALLA", "WALLA", "BING", "BANG" ]
 			)
 		self.assertIn(
-			f"DEBUG:read_generator:Location \"{self.some_location}\" access granted", case_loggy.output
+			f"INFO:read_generator:Location \"{self.some_location}\" access granted", case_loggy.output
 		)
 		self.assertEqual(self.test_case.is_located(), self.some_location)
 
@@ -271,7 +271,7 @@ class AccessVolumeCase(IrmaTestCase):
 			self.assertEqual(lines,[ "OOH", "EEH", "OOH" ])
 		self.assertIn(
 
-			f"DEBUG:read_generator_break_outer:Location \"{self.some_location}\" access granted",
+			f"INFO:read_generator_break_outer:Location \"{self.some_location}\" access granted",
 			case_loggy.output
 		)
 		self.assertEqual(self.test_case.is_located(), self.some_location)
@@ -458,7 +458,7 @@ class AccessVolumeCase(IrmaTestCase):
 
 
 
-if	__name__ == "__main__" : unittest.main(verbosity=2)
+if __name__ == "__main__" : unittest.main(verbosity=2)
 
 
 

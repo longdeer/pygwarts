@@ -3,7 +3,7 @@ from pygwarts.magical.time_turner.timers	import DIRTtimer
 from pygwarts.irma.contrib					import LibraryContrib
 from pygwarts.filch.linkindor				import EUI48_format
 from pygwarts.filch.linkindor				import P_ARP_REQ
-from pygwarts.filch.linkindor.sniffing		import ARPSniffer
+from pygwarts.filch.linkindor.arp			import ARPSniffer
 from scapy.all								import sniff
 from scapy.all								import Ether
 from scapy.all								import ARP
@@ -33,6 +33,7 @@ if	__name__ == "__main__":
 				if	(MAC := EUI48_format(FRAME.src)) is not None:
 					match FRAME[ARP].op:
 
+						# P_ARP_REQ if matched, will return whole match by "group".
 						case 1:	self.loggy.info(f"{P_ARP_REQ.search(FRAME.summary()).group()} ({MAC})")
 						case 2:	self.loggy.debug(f"{MAC} answer")
 						case _:	self.loggy.debug(FRAME.summary())

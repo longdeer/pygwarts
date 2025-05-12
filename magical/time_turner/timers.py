@@ -108,7 +108,7 @@ def mostsec(value :int | float | str, positive=False) -> str | None :
 			0			-> <1 ns
 	"""
 
-	try:	TIME = abs(float(value))
+	try:	TIME = abs(float(str(value)))
 	except:	return
 	else:
 

@@ -6,7 +6,7 @@ About
 -----
 This library is imbued with magic and built upon standard library only (no third party dependencies). It suggests various instruments, with fantastic semantic, to work with files, network, email and more. It also offers it's object model, that allows implementing additional instruments of any kinds.
 
-Current version ![Static Badge](https://img.shields.io/badge/rc1.4.9.6-purple)
+Current version ![Static Badge](https://img.shields.io/badge/rc1.5.1.4-purple)
 ---------------
 Tested on Windows 10 and Ubuntu server 24.04
 <br>![Static Badge](https://img.shields.io/badge/python3.10-passed-green?labelColor=blue)
@@ -20,10 +20,10 @@ Requirements
 
 Installation
 ------------
-Get latest version from github
+Get latest version from GitHub
 <br>``https://github.com/longdeer/pygwarts.git``
 <br>
-or from ``pip``
+or from PyPI
 <br>
 ``pip install pygwarts``
 
